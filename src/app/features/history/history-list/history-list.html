@@ -1,0 +1,35 @@
+<div class="page">
+  <header class="page__header">
+    <h1>Storico</h1>
+  </header>
+
+  @if (sessions().length === 0) {
+    <div class="empty">
+      <p class="empty__title">Ancora nessun allenamento completato</p>
+      <p class="empty__body">
+        Le sessioni che concludi dal tab Allenamento compariranno qui, con lo
+        storico di serie, ripetizioni e carichi.
+      </p>
+    </div>
+  } @else {
+    <ul class="history-list">
+      @for (session of sessions(); track session.id) {
+        <li>
+          <a class="history-card" [routerLink]="['/storico', session.id]">
+            <div class="history-card__main">
+              <span class="history-card__name">{{ session.planName }}</span>
+              <span class="history-card__meta">
+                {{ dateLabel(session.date) }} ·
+                {{ durationLabel(session.startedAt, session.finishedAt) }} ·
+                {{ setsCount(session) }} serie
+              </span>
+            </div>
+            <svg class="history-card__chevron" viewBox="0 0 24 24" fill="none">
+              <path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </a>
+        </li>
+      }
+    </ul>
+  }
+</div>

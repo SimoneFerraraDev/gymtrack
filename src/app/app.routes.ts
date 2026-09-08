@@ -34,10 +34,16 @@ export const routes: Routes = [
   {
     path: 'storico',
     loadComponent: () =>
-      import('./shared/placeholder-page/placeholder-page').then(
-        (m) => m.PlaceholderPage,
+      import('./features/history/history-list/history-list').then(
+        (m) => m.HistoryList,
       ),
-    data: { title: 'Storico', message: 'Qui vedrai le sessioni passate.' },
+  },
+  {
+    path: 'storico/:id',
+    loadComponent: () =>
+      import('./features/history/session-detail/session-detail').then(
+        (m) => m.SessionDetail,
+      ),
   },
   {
     path: 'progressi',

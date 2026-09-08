@@ -1,0 +1,57 @@
+@if (!loading() && session(); as s) {
+  <div class="page">
+    <header class="page__header">
+      <div>
+        <h1>{{ s.planName }}</h1>
+        <p class="detail-meta">{{ dateLabel(s.date) }}</p>
+      </div>
+    </header>
+
+    <div class="stat-row">
+      <div class="stat">
+        <span class="stat__value num">{{ durationLabel(s.startedAt, s.finishedAt) }}</span>
+        <span class="stat__label">Durata</span>
+      </div>
+      <div class="stat">
+        <span class="stat__value num">{{ totalVolume() | number: '1.0-0' }} kg</span>
+        <span class="stat__label">Volume totale</span>
+      </div>
+      <div class="stat">
+        <span class="stat__value num">{{ s.exerciseLogs.length }}</span>
+        <span class="stat__label">Esercizi</span>
+      </div>
+    </div>
+
+    <div class="exercise-summary-list">
+      @for (log of s.exerciseLogs; track log.id) {
+        <div class="exercise-summary-card">
+          <span class="exercise-summary-card__name">{{ log.exerciseName }}</span>
+          @if (log.sets.length > 0) {
+            <ul class="set-summary-list">
+              @for (set of log.sets; track set.id) {
+                <li class="set-summary-row">
+                  <span class="num">{{ set.setNumber }}.</span>
+                  <span class="num">{{ set.reps }} rip</span>
+                  <span class="num">{{ set.weight }} kg</span>
+                  @if (set.notes) {
+                    <span class="set-summary-row__notes">{{ set.notes }}</span>
+                  }
+                </li>
+              }
+            </ul>
+          } @else {
+            <p class="exercise-summary-card__empty">Nessuna serie registrata</p>
+          }
+        </div>
+      }
+    </div>
+
+    @if (s.notes) {
+      <p class="session-notes">{{ s.notes }}</p>
+    }
+
+    <button type="button" class="btn btn--danger" (click)="deleteSession()">
+      Elimina allenamento
+    </button>
+  </div>
+}
