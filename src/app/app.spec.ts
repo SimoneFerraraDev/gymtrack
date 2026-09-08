@@ -20,6 +20,6 @@ describe('App', () => {
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelectorAll('.tabbar__item').length).toBe(4);
+    expect(compiled.querySelectorAll('.tabbar__item').length).toBe(5);
   });
 });

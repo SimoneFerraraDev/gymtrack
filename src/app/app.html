@@ -37,6 +37,14 @@
                 <path d="M4 20V10M11 20V4M18 20v-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             }
+            @case ('settings') {
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h13M21 18h-1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                <circle cx="14" cy="6" r="2" fill="var(--color-surface)" stroke="currentColor" stroke-width="1.8"/>
+                <circle cx="8" cy="12" r="2" fill="var(--color-surface)" stroke="currentColor" stroke-width="1.8"/>
+                <circle cx="17" cy="18" r="2" fill="var(--color-surface)" stroke="currentColor" stroke-width="1.8"/>
+              </svg>
+            }
           }
         </span>
         <span class="tabbar__label">{{ tab.label }}</span>

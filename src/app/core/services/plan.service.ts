@@ -15,10 +15,10 @@ export class PlanService {
   readonly activePlans = signal<WorkoutPlan[]>([]);
 
   constructor() {
-    this.reload();
+    this.refresh();
   }
 
-  private async reload(): Promise<void> {
+  async refresh(): Promise<void> {
     const all = await db.plans.orderBy('updatedAt').reverse().toArray();
     this._plans.set(all);
     this.activePlans.set(all.filter((p) => !p.archived));
@@ -35,7 +35,7 @@ export class PlanService {
       exercises: input.exercises.map((e) => this.withId(e)),
     };
     await db.plans.add(plan);
-    await this.reload();
+    await this.refresh();
     return plan;
   }
 
@@ -44,7 +44,7 @@ export class PlanService {
     changes: Partial<Omit<WorkoutPlan, 'id' | 'createdAt'>>,
   ): Promise<void> {
     await db.plans.update(id, { ...changes, updatedAt: Date.now() });
-    await this.reload();
+    await this.refresh();
   }
 
   async setArchived(id: string, archived: boolean): Promise<void> {
@@ -53,7 +53,7 @@ export class PlanService {
 
   async remove(id: string): Promise<void> {
     await db.plans.delete(id);
-    await this.reload();
+    await this.refresh();
   }
 
   async getById(id: string): Promise<WorkoutPlan | undefined> {

@@ -10,10 +10,10 @@ export class ExerciseService {
   readonly exercises = this._exercises.asReadonly();
 
   constructor() {
-    this.reload();
+    this.refresh();
   }
 
-  private async reload(): Promise<void> {
+  async refresh(): Promise<void> {
     const all = await db.exercises.orderBy('name').toArray();
     this._exercises.set(all);
   }
@@ -25,18 +25,18 @@ export class ExerciseService {
       createdAt: Date.now(),
     };
     await db.exercises.add(exercise);
-    await this.reload();
+    await this.refresh();
     return exercise;
   }
 
   async update(id: string, changes: Partial<NewExercise>): Promise<void> {
     await db.exercises.update(id, changes);
-    await this.reload();
+    await this.refresh();
   }
 
   async remove(id: string): Promise<void> {
     await db.exercises.delete(id);
-    await this.reload();
+    await this.refresh();
   }
 
   async getById(id: string): Promise<Exercise | undefined> {

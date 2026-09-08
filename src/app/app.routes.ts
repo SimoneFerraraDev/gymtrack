@@ -52,5 +52,12 @@ export const routes: Routes = [
         (m) => m.ProgressPage,
       ),
   },
+  {
+    path: 'impostazioni',
+    loadComponent: () =>
+      import('./features/settings/settings-page').then(
+        (m) => m.SettingsPage,
+      ),
+  },
   { path: '**', redirectTo: 'schede' },
 ];

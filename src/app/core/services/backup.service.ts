@@ -1,8 +1,11 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { db } from '../db/gymtrack-db';
 import { Exercise } from '../models/exercise.model';
 import { WorkoutPlan } from '../models/workout-plan.model';
 import { WorkoutSession } from '../models/workout-session.model';
+import { ExerciseService } from './exercise.service';
+import { PlanService } from './plan.service';
+import { SessionService } from './session.service';
 
 interface BackupFile {
   formatVersion: 1;
@@ -20,6 +23,10 @@ interface BackupFile {
  */
 @Injectable({ providedIn: 'root' })
 export class BackupService {
+  private readonly exerciseService = inject(ExerciseService);
+  private readonly planService = inject(PlanService);
+  private readonly sessionService = inject(SessionService);
+
   async exportToFile(): Promise<void> {
     const backup: BackupFile = {
       formatVersion: 1,
@@ -60,5 +67,15 @@ export class BackupService {
         await db.sessions.bulkPut(backup.sessions);
       },
     );
+
+    // I tre servizi tengono in memoria una copia reattiva dei dati per
+    // aggiornare subito l'interfaccia; qui abbiamo scritto sul database
+    // scavalcandoli, quindi vanno risincronizzati esplicitamente, o
+    // l'app continuerebbe a mostrare lo stato precedente all'import.
+    await Promise.all([
+      this.exerciseService.refresh(),
+      this.planService.refresh(),
+      this.sessionService.refresh(),
+    ]);
   }
 }

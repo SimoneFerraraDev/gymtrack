@@ -1,0 +1,65 @@
+<div class="page">
+  <header class="page__header">
+    <h1>Impostazioni</h1>
+  </header>
+
+  <section class="card">
+    <h2 class="card__title">Backup</h2>
+    <p class="card__body">
+      GymTrack salva tutto solo su questo dispositivo — non c'è nessun
+      account o cloud. Esporta un backup ogni tanto per non rischiare di
+      perdere schede e storico se cambi telefono o cancelli i dati del
+      browser.
+    </p>
+
+    <p class="summary">
+      Il backup includerà: <strong>{{ summary().plans }}</strong> schede,
+      <strong> {{ summary().exercises }}</strong> esercizi in catalogo,
+      <strong> {{ summary().sessions }}</strong> sessioni.
+    </p>
+
+    <button
+      type="button"
+      class="btn btn--primary btn--block"
+      (click)="exportBackup()"
+      [disabled]="exporting()"
+    >
+      {{ exporting() ? 'Esportazione…' : 'Esporta backup (JSON)' }}
+    </button>
+  </section>
+
+  <section class="card">
+    <h2 class="card__title">Ripristina da backup</h2>
+    <p class="card__body">
+      Carica un file esportato in precedenza. I dati con lo stesso ID
+      vengono aggiornati; il resto di ciò che hai già sul dispositivo non
+      viene toccato.
+    </p>
+
+    <input
+      #fileInput
+      type="file"
+      accept="application/json,.json"
+      class="visually-hidden"
+      (change)="onFileSelected($event)"
+    />
+
+    <button
+      type="button"
+      class="btn btn--secondary btn--block"
+      (click)="triggerImport()"
+      [disabled]="importState() === 'importing'"
+    >
+      {{ importState() === 'importing' ? 'Importazione…' : 'Importa backup (JSON)' }}
+    </button>
+
+    @if (importState() === 'success') {
+      <p class="feedback feedback--success">Backup importato correttamente.</p>
+    }
+    @if (importState() === 'error') {
+      <p class="feedback feedback--error">
+        Import non riuscito: {{ importError() }}
+      </p>
+    }
+  </section>
+</div>

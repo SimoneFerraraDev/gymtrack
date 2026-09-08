@@ -19,10 +19,10 @@ export class SessionService {
   readonly sessions = this._sessions.asReadonly();
 
   constructor() {
-    this.reload();
+    this.refresh();
   }
 
-  private async reload(): Promise<void> {
+  async refresh(): Promise<void> {
     const all = await db.sessions.orderBy('date').reverse().toArray();
     this._sessions.set(all);
   }
@@ -30,7 +30,7 @@ export class SessionService {
   async create(input: NewWorkoutSession): Promise<WorkoutSession> {
     const session: WorkoutSession = { ...input, id: generateId() };
     await db.sessions.add(session);
-    await this.reload();
+    await this.refresh();
     return session;
   }
 
@@ -39,12 +39,12 @@ export class SessionService {
     changes: Partial<Omit<WorkoutSession, 'id'>>,
   ): Promise<void> {
     await db.sessions.update(id, changes);
-    await this.reload();
+    await this.refresh();
   }
 
   async remove(id: string): Promise<void> {
     await db.sessions.delete(id);
-    await this.reload();
+    await this.refresh();
   }
 
   async getById(id: string): Promise<WorkoutSession | undefined> {

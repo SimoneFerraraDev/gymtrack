@@ -4,7 +4,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 interface NavTab {
   path: string;
   label: string;
-  icon: 'plans' | 'workout' | 'history' | 'progress';
+  icon: 'plans' | 'workout' | 'history' | 'progress' | 'settings';
 }
 
 @Component({
@@ -19,5 +19,6 @@ export class App {
     { path: '/allenamento', label: 'Allenamento', icon: 'workout' },
     { path: '/storico', label: 'Storico', icon: 'history' },
     { path: '/progressi', label: 'Progressi', icon: 'progress' },
+    { path: '/impostazioni', label: 'Impostazioni', icon: 'settings' },
   ];
 }
