@@ -1,12 +1,9 @@
 @if (!loading() && session(); as s) {
   <div class="page">
     <header class="page__header session-header">
-      <div class="page__header-title">
-        <app-back-button to="/allenamento" />
-        <div>
-          <h1>{{ s.planName }}</h1>
-          <p class="session-header__meta">Iniziato alle {{ startedAtLabel(s.startedAt) }}</p>
-        </div>
+      <div>
+        <h1>{{ s.planName }}</h1>
+        <p class="session-header__meta">Iniziato alle {{ startedAtLabel(s.startedAt) }}</p>
       </div>
       <button type="button" class="btn btn--secondary" (click)="finishWorkout()" [disabled]="finishing()">
         Termina

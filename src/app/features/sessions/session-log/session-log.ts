@@ -10,7 +10,6 @@ import {
 } from '../../../core/models/workout-session.model';
 import { PlanService } from '../../../core/services/plan.service';
 import { SessionService } from '../../../core/services/session.service';
-import { BackButton } from '../../../shared/back-button/back-button';
 
 /** Estrae il primo numero da una stringa tipo "8-10" o "AMRAP" (→ null). */
 function firstNumber(text: string): number | null {
@@ -20,7 +19,7 @@ function firstNumber(text: string): number | null {
 
 @Component({
   selector: 'app-session-log',
-  imports: [ReactiveFormsModule, BackButton],
+  imports: [ReactiveFormsModule],
   templateUrl: './session-log.html',
   styleUrl: './session-log.scss',
 })
