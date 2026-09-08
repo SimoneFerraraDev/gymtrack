@@ -1,0 +1,45 @@
+<div class="page">
+  <header class="page__header">
+    <h1>Progressi</h1>
+  </header>
+
+  @if (exerciseOptions().length === 0) {
+    <div class="empty">
+      <p class="empty__title">Ancora nessun dato</p>
+      <p class="empty__body">
+        Registra qualche allenamento dal tab Allenamento: qui vedrai
+        l'andamento del carico nel tempo, esercizio per esercizio.
+      </p>
+    </div>
+  } @else {
+    <div class="exercise-chips">
+      @for (option of exerciseOptions(); track option.id) {
+        <button
+          type="button"
+          class="exercise-chip"
+          [class.exercise-chip--active]="option.id === selectedExerciseId()"
+          (click)="selectExercise(option.id)"
+        >
+          {{ option.name }}
+        </button>
+      }
+    </div>
+
+    @if (points().length === 0 && !loadingPoints()) {
+      <p class="no-points">Nessuna serie registrata per questo esercizio.</p>
+    } @else {
+      <div class="stat-row">
+        <div class="stat">
+          <span class="stat__value num">{{ latestWeight() ?? '—' }} kg</span>
+          <span class="stat__label">Ultimo carico</span>
+        </div>
+        <div class="stat">
+          <span class="stat__value num">{{ bestWeight() ?? '—' }} kg</span>
+          <span class="stat__label">Record</span>
+        </div>
+      </div>
+
+      <app-weight-chart [points]="points()" />
+    }
+  }
+</div>

@@ -48,10 +48,9 @@ export const routes: Routes = [
   {
     path: 'progressi',
     loadComponent: () =>
-      import('./shared/placeholder-page/placeholder-page').then(
-        (m) => m.PlaceholderPage,
+      import('./features/progress/progress-page').then(
+        (m) => m.ProgressPage,
       ),
-    data: { title: 'Progressi', message: 'Qui vedrai il grafico di progressione dei carichi.' },
   },
   { path: '**', redirectTo: 'schede' },
 ];
