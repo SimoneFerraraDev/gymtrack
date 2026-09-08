@@ -1,0 +1,109 @@
+{
+  "configVersion": 1,
+  "timestamp": 1788863127807,
+  "index": "/gymtrack/index.html",
+  "assetGroups": [
+    {
+      "name": "app",
+      "installMode": "prefetch",
+      "updateMode": "prefetch",
+      "cacheQueryOptions": {
+        "ignoreVary": true
+      },
+      "urls": [
+        "/gymtrack/chunk-33MWHIBC.js",
+        "/gymtrack/chunk-4NKJAGGX.js",
+        "/gymtrack/chunk-564PKYSX.js",
+        "/gymtrack/chunk-7KZ7TMOS.js",
+        "/gymtrack/chunk-DVRFLTJL.js",
+        "/gymtrack/chunk-DYZCI2VM.js",
+        "/gymtrack/chunk-JXQHXMDN.js",
+        "/gymtrack/chunk-LQPC6PV3.js",
+        "/gymtrack/chunk-MBBECGR7.js",
+        "/gymtrack/chunk-MRGHSCPS.js",
+        "/gymtrack/chunk-MWK5OW7K.js",
+        "/gymtrack/chunk-O5OZGNCW.js",
+        "/gymtrack/chunk-PA2ATKRT.js",
+        "/gymtrack/chunk-VPQA7RRK.js",
+        "/gymtrack/chunk-VUCSYYNS.js",
+        "/gymtrack/chunk-XZR7IQZY.js",
+        "/gymtrack/favicon.ico",
+        "/gymtrack/index.html",
+        "/gymtrack/main-OYUJTKBF.js",
+        "/gymtrack/manifest.webmanifest",
+        "/gymtrack/styles-P2Q2C3VA.css"
+      ],
+      "patterns": []
+    },
+    {
+      "name": "assets",
+      "installMode": "lazy",
+      "updateMode": "prefetch",
+      "cacheQueryOptions": {
+        "ignoreVary": true
+      },
+      "urls": [
+        "/gymtrack/icons/icon-128x128.png",
+        "/gymtrack/icons/icon-144x144.png",
+        "/gymtrack/icons/icon-152x152.png",
+        "/gymtrack/icons/icon-192x192.png",
+        "/gymtrack/icons/icon-384x384.png",
+        "/gymtrack/icons/icon-512x512.png",
+        "/gymtrack/icons/icon-72x72.png",
+        "/gymtrack/icons/icon-96x96.png"
+      ],
+      "patterns": []
+    }
+  ],
+  "dataGroups": [],
+  "hashTable": {
+    "/gymtrack/chunk-33MWHIBC.js": "9846ebc75cba5c65bd9af2307d92456af14ebced",
+    "/gymtrack/chunk-4NKJAGGX.js": "a26d5cc3d018c6e823360c142946a5f21e47ba8a",
+    "/gymtrack/chunk-564PKYSX.js": "d638272edebb07d700255a232ff3a9330aead860",
+    "/gymtrack/chunk-7KZ7TMOS.js": "552ff97c640753a523996a3f246d95a153478837",
+    "/gymtrack/chunk-DVRFLTJL.js": "bfb2266be30b44efb4d01a7a63b4a0265279bc97",
+    "/gymtrack/chunk-DYZCI2VM.js": "47fdde98a1899cd75e74d4a4d0eddc81811436a6",
+    "/gymtrack/chunk-JXQHXMDN.js": "abd6ee9918ad3ff4d8f096bc806c1cf1a6934456",
+    "/gymtrack/chunk-LQPC6PV3.js": "968037bb677da902260db3008247abff61cb1305",
+    "/gymtrack/chunk-MBBECGR7.js": "dc11565fb4be0db5217f95f4e8cfbe080ff611ff",
+    "/gymtrack/chunk-MRGHSCPS.js": "0d789773c038b90d27646cf17c6f217f4fcb7f68",
+    "/gymtrack/chunk-MWK5OW7K.js": "2f2397da9e7d1458d7d50f98e18f9b215fb9cec9",
+    "/gymtrack/chunk-O5OZGNCW.js": "80f32bf2b7eb8d46a6bc2f27d9c9946a7b31bc67",
+    "/gymtrack/chunk-PA2ATKRT.js": "a30ff3393264c87237f33aa2be32f33d968c1496",
+    "/gymtrack/chunk-VPQA7RRK.js": "3f325640618f952b2251c72659c69380760b7942",
+    "/gymtrack/chunk-VUCSYYNS.js": "b720c8543c5484e0ef986e5cf8bd4920495fd836",
+    "/gymtrack/chunk-XZR7IQZY.js": "319a9a5211aa17d1113a80a653518e56f4c89832",
+    "/gymtrack/favicon.ico": "9c39f434fe1261f68c5e3eefdf734630d99c5670",
+    "/gymtrack/icons/icon-128x128.png": "f912963bdc6d5a38d8f1dd0afbaab2ce8d657acb",
+    "/gymtrack/icons/icon-144x144.png": "b155fd5f2fd5d2ea7760721063003c4cd95fd783",
+    "/gymtrack/icons/icon-152x152.png": "eae6e0f0c8afb8aaae339e2a569b43e9238e5e6c",
+    "/gymtrack/icons/icon-192x192.png": "15c4180454633880d98674aa7394656196c91584",
+    "/gymtrack/icons/icon-384x384.png": "94a915751ef6c9282df9aea405ad679230631814",
+    "/gymtrack/icons/icon-512x512.png": "1de182f76f7329dfa8f9fcdd1fdcdd695bea6a99",
+    "/gymtrack/icons/icon-72x72.png": "aa88a6096bd973be7f6d7a5489bfa6bc2463f8c4",
+    "/gymtrack/icons/icon-96x96.png": "7fb8f59c30ce2ff12c700321a0b39e14b3dc8f95",
+    "/gymtrack/index.html": "fe5c5374d8959fbd2a136b3814d4b20e29c7e11b",
+    "/gymtrack/main-OYUJTKBF.js": "1d0071029ebbeb0395c83e3727ff032c81cc91f4",
+    "/gymtrack/manifest.webmanifest": "1f8d2fea241f1e623eb1d40172f2ae8d9bfbacce",
+    "/gymtrack/styles-P2Q2C3VA.css": "f6f058c6f395c48849347349c973418d07078dbf"
+  },
+  "navigationUrls": [
+    {
+      "positive": true,
+      "regex": "^\\/.*$"
+    },
+    {
+      "positive": false,
+      "regex": "^\\/(?:.+\\/)?[^/]*\\.[^/]*$"
+    },
+    {
+      "positive": false,
+      "regex": "^\\/(?:.+\\/)?[^/]*__[^/]*$"
+    },
+    {
+      "positive": false,
+      "regex": "^\\/(?:.+\\/)?[^/]*__[^/]*\\/.*$"
+    }
+  ],
+  "navigationRequestStrategy": "performance"
+}
