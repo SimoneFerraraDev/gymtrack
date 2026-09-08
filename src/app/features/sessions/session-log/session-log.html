@@ -1,11 +1,24 @@
 @if (!loading() && session(); as s) {
   <div class="page">
     <header class="page__header session-header">
-      <div>
-        <h1>{{ s.planName }}</h1>
-        <p class="session-header__meta">Iniziato alle {{ startedAtLabel(s.startedAt) }}</p>
+      <div class="page__header-title">
+        <button
+          type="button"
+          class="cancel-btn"
+          aria-label="Annulla allenamento"
+          (click)="cancelWorkout()"
+          [disabled]="cancelling() || finishing()"
+        >
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <div>
+          <h1>{{ s.planName }}</h1>
+          <p class="session-header__meta">Iniziato alle {{ startedAtLabel(s.startedAt) }}</p>
+        </div>
       </div>
-      <button type="button" class="btn btn--secondary" (click)="finishWorkout()" [disabled]="finishing()">
+      <button type="button" class="btn btn--secondary" (click)="finishWorkout()" [disabled]="finishing() || cancelling()">
         Termina
       </button>
     </header>

@@ -34,6 +34,7 @@ export class SessionLog implements OnInit {
   readonly session = signal<WorkoutSession | null>(null);
   readonly loading = signal(true);
   readonly finishing = signal(false);
+  readonly cancelling = signal(false);
 
   /** Serie pianificate dalla scheda originale, per esercizio: il carico può
    *  variare da una serie all'altra (es. rampa 40-45-50kg), quindi qui
@@ -168,6 +169,28 @@ export class SessionLog implements OnInit {
 
     this.finishing.set(true);
     await this.sessionService.finish(session.id);
+    this.router.navigateByUrl('/allenamento');
+  }
+
+  /**
+   * Annulla l'allenamento: cancella la sessione dal database, senza
+   * salvarla nello storico. Usato per uscire da un allenamento aperto per
+   * sbaglio (o da abbandonare), a differenza di "Termina" che lo conclude
+   * e lo mantiene come sessione registrata.
+   */
+  async cancelWorkout(): Promise<void> {
+    const session = this.session();
+    if (!session || this.cancelling() || this.finishing()) return;
+    if (
+      !confirm(
+        'Annullare questo allenamento? Le serie registrate andranno perse e non verrà salvato nello storico.',
+      )
+    ) {
+      return;
+    }
+
+    this.cancelling.set(true);
+    await this.sessionService.remove(session.id);
     this.router.navigateByUrl('/allenamento');
   }
 

@@ -2,6 +2,28 @@
   align-items: flex-start;
 }
 
+.cancel-btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--color-text);
+  flex-shrink: 0;
+  margin-left: calc(var(--space-2) * -1);
+}
+
+.cancel-btn svg {
+  width: 22px;
+  height: 22px;
+}
+
+.cancel-btn:disabled {
+  opacity: 0.4;
+}
+
 .session-header__meta {
   margin: var(--space-1) 0 0;
   font-size: var(--text-sm);
