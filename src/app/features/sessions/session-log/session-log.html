@@ -39,34 +39,47 @@
                 <li>
                   @switch (slot.status) {
                     @case ('done') {
-                      <div class="set-row">
-                        <span class="set-row__label num">Serie {{ slot.index + 1 }}</span>
-                        <span class="set-row__value num">{{ slot.set!.reps }} rip</span>
-                        <span class="set-row__value num">{{ slot.set!.weight }} kg</span>
-                        @if (slot.index === row.log.sets.length - 1) {
-                          <button
-                            type="button"
-                            class="set-row__remove"
-                            aria-label="Rimuovi ultima serie"
-                            (click)="removeLastSet(row.log)"
-                          >
-                            ×
-                          </button>
+                      <div class="set-row-wrapper">
+                        <div class="set-row">
+                          <span class="set-row__label num">Serie {{ slot.index + 1 }}</span>
+                          <span class="set-row__value num">{{ slot.set!.reps }} rip</span>
+                          <span class="set-row__value num">{{ slot.set!.weight }} kg</span>
+                          @if (slot.index === row.log.sets.length - 1) {
+                            <button
+                              type="button"
+                              class="set-row__remove"
+                              aria-label="Rimuovi ultima serie"
+                              (click)="removeLastSet(row.log)"
+                            >
+                              ×
+                            </button>
+                          }
+                        </div>
+                        @if (slot.set!.notes) {
+                          <p class="set-row__note-text">{{ slot.set!.notes }}</p>
                         }
                       </div>
                     }
                     @case ('current') {
                       <form class="set-draft" [formGroup]="row.form" (ngSubmit)="addSet(row.log)">
-                        <span class="set-draft__index num">{{ slot.index + 1 }}</span>
-                        <div class="set-draft__field">
-                          <label class="field__label">Rip</label>
-                          <input class="field__input num" type="number" min="0" formControlName="reps" />
+                        <div class="set-draft__row">
+                          <span class="set-draft__index num">{{ slot.index + 1 }}</span>
+                          <div class="set-draft__field">
+                            <label class="field__label">Rip</label>
+                            <input class="field__input num" type="number" min="0" formControlName="reps" />
+                          </div>
+                          <div class="set-draft__field">
+                            <label class="field__label">Kg</label>
+                            <input class="field__input num" type="number" min="0" step="0.5" formControlName="weight" />
+                          </div>
+                          <button type="submit" class="set-draft__add" aria-label="Conferma serie">✓</button>
                         </div>
-                        <div class="set-draft__field">
-                          <label class="field__label">Kg</label>
-                          <input class="field__input num" type="number" min="0" step="0.5" formControlName="weight" />
-                        </div>
-                        <button type="submit" class="set-draft__add" aria-label="Conferma serie">✓</button>
+                        <input
+                          class="field__input set-draft__notes"
+                          type="text"
+                          formControlName="notes"
+                          placeholder="Nota (opzionale) — es. cedimento, presa stretta…"
+                        />
                       </form>
                     }
                     @case ('upcoming') {
