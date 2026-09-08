@@ -1,0 +1,44 @@
+<div class="page">
+  <header class="page__header">
+    <h1>Schede</h1>
+    <a class="btn btn--primary" routerLink="/schede/nuova">+ Nuova</a>
+  </header>
+
+  @if (plans().length === 0) {
+    <div class="empty">
+      <p class="empty__title">Non hai ancora nessuna scheda</p>
+      <p class="empty__body">
+        Crea la tua prima scheda con gli esercizi che stai seguendo: la
+        userai durante l'allenamento per loggare serie, ripetizioni e carichi.
+      </p>
+      <a class="btn btn--primary" routerLink="/schede/nuova">Crea la prima scheda</a>
+    </div>
+  } @else {
+    <ul class="plan-list">
+      @for (plan of plans(); track plan.id) {
+        <li>
+          <a class="plan-card" [routerLink]="['/schede', plan.id, 'modifica']">
+            <div class="plan-card__main">
+              <span class="plan-card__name">{{ plan.name }}</span>
+              <span class="plan-card__meta">
+                {{ exerciseCountLabel(plan.exercises.length) }} ·
+                {{ updatedAtLabel(plan.updatedAt) }}
+              </span>
+            </div>
+            <button
+              type="button"
+              class="plan-card__delete"
+              aria-label="Elimina scheda"
+              (click)="delete(plan.id, $event)"
+            >
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M5 7h14M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-8 0v12a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V7"
+                  stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+          </a>
+        </li>
+      }
+    </ul>
+  }
+</div>

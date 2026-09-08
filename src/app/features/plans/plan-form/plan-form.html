@@ -1,0 +1,77 @@
+<form class="page" [formGroup]="form" (ngSubmit)="save()">
+  <header class="page__header">
+    <h1>{{ isEditMode() ? 'Modifica scheda' : 'Nuova scheda' }}</h1>
+  </header>
+
+  <div class="field">
+    <label class="field__label" for="plan-name">Nome scheda</label>
+    <input
+      id="plan-name"
+      class="field__input"
+      type="text"
+      formControlName="name"
+      placeholder="Es. Push/Pull/Legs A"
+      autocomplete="off"
+    />
+  </div>
+
+  <h2 class="section-title">Esercizi</h2>
+
+  <div formArrayName="exercises" class="exercise-rows">
+    @for (row of exercises.controls; track row; let i = $index) {
+      <div class="exercise-row" [formGroupName]="i">
+        <div class="exercise-row__top">
+          <input
+            class="field__input exercise-row__name"
+            type="text"
+            formControlName="exerciseName"
+            placeholder="Nome esercizio (es. Panca piana)"
+            autocomplete="off"
+          />
+          <div class="exercise-row__reorder">
+            <button type="button" class="icon-btn" (click)="moveUp(i)" [disabled]="i === 0" aria-label="Sposta su">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M12 19V5M6 11l6-6 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <button type="button" class="icon-btn" (click)="moveDown(i)" [disabled]="i === exercises.length - 1" aria-label="Sposta giù">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M6 13l6 6 6-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="exercise-row__grid">
+          <div class="field">
+            <label class="field__label">Serie</label>
+            <input class="field__input num" type="number" min="1" formControlName="targetSets" />
+          </div>
+          <div class="field">
+            <label class="field__label">Ripetizioni</label>
+            <input class="field__input" type="text" formControlName="targetReps" placeholder="8-10" />
+          </div>
+          <div class="field">
+            <label class="field__label">Carico rif. (kg)</label>
+            <input class="field__input num" type="number" step="0.5" formControlName="targetWeight" placeholder="—" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field__label">Note</label>
+          <input class="field__input" type="text" formControlName="notes" placeholder="Es. presa stretta, cedimento sull'ultima serie" />
+        </div>
+
+        <button type="button" class="btn btn--danger exercise-row__remove" (click)="removeExerciseRow(i)">
+          Rimuovi esercizio
+        </button>
+      </div>
+    }
+  </div>
+
+  <button type="button" class="btn btn--secondary btn--block" (click)="addExerciseRow()">
+    + Aggiungi esercizio
+  </button>
+
+  <div class="page__actions">
+    <button type="submit" class="btn btn--primary btn--block" [disabled]="saving">
+      {{ saving ? 'Salvataggio…' : 'Salva scheda' }}
+    </button>
+  </div>
+</form>
