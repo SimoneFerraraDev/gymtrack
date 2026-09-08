@@ -1,4 +1,4 @@
-import { Component, effect, inject, input } from '@angular/core';
+import { Component, effect, inject, input, signal } from '@angular/core';
 import {
   FormArray,
   FormBuilder,
@@ -33,6 +33,16 @@ export class PlanForm {
   protected readonly isEditMode = () => !!this.id();
   protected saving = false;
 
+  /**
+   * In modalità modifica il form parte "vuoto" finché loadForEdit (asincrono)
+   * non ha popolato l'array esercizi. Senza questo segnale, in un'app
+   * zoneless come questa la vista non si ridisegna da sola quando quel
+   * caricamento finisce (nessun signal cambia dopo gli `await`), e gli
+   * esercizi restano invisibili finché non arriva un'altra interazione
+   * (es. un click) a forzare un nuovo giro di change detection.
+   */
+  readonly loading = signal(true);
+
   protected readonly form = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.maxLength(60)]],
     exercises: this.fb.array<ReturnType<typeof this.buildExerciseRow>>([]),
@@ -45,9 +55,11 @@ export class PlanForm {
       const currentId = this.id();
       this.exercises.clear();
       if (currentId) {
+        this.loading.set(true);
         this.loadForEdit(currentId);
       } else {
         this.addExerciseRow();
+        this.loading.set(false);
       }
     });
   }
@@ -145,6 +157,7 @@ export class PlanForm {
       );
     }
     if (this.exercises.length === 0) this.addExerciseRow();
+    this.loading.set(false);
   }
 
   async save(): Promise<void> {

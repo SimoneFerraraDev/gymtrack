@@ -1,3 +1,4 @@
+@if (!loading()) {
 <form class="page" [formGroup]="form" (ngSubmit)="save()">
   <header class="page__header">
     <div class="page__header-title">
@@ -96,3 +97,4 @@
     </button>
   </div>
 </form>
+}
