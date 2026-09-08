@@ -1,0 +1,43 @@
+.page__hint {
+  color: var(--color-text-muted);
+  margin: 0 0 var(--space-4);
+}
+
+.plan-pick-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.plan-pick {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  color: var(--color-text);
+  text-align: left;
+  min-height: 56px;
+}
+
+.plan-pick:active {
+  border-color: var(--color-accent);
+}
+
+.plan-pick__name {
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+
+.plan-pick__meta {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}

@@ -1,0 +1,62 @@
+@if (!loading() && session(); as s) {
+  <div class="page">
+    <header class="page__header session-header">
+      <div>
+        <h1>{{ s.planName }}</h1>
+        <p class="session-header__meta">Iniziato alle {{ startedAtLabel(s.startedAt) }}</p>
+      </div>
+      <button type="button" class="btn btn--secondary" (click)="finishWorkout()" [disabled]="finishing()">
+        Termina
+      </button>
+    </header>
+
+    <div class="exercise-log-list">
+      @for (row of rows(); track row.log.id) {
+        <div class="exercise-log-card">
+          <div class="exercise-log-card__head">
+            <span class="exercise-log-card__name">{{ row.log.exerciseName }}</span>
+            @if (targetLabel(row.log.exerciseId); as target) {
+              <span class="exercise-log-card__target">{{ target }}</span>
+            }
+          </div>
+
+          @if (row.log.sets.length > 0) {
+            <ul class="set-list">
+              @for (set of row.log.sets; track set.id) {
+                <li class="set-row">
+                  <span class="set-row__label num">Serie {{ set.setNumber }}</span>
+                  <span class="set-row__value num">{{ set.reps }} rip</span>
+                  <span class="set-row__value num">{{ set.weight }} kg</span>
+                  <button
+                    type="button"
+                    class="set-row__remove"
+                    aria-label="Rimuovi serie"
+                    (click)="removeSet(row.log, set.id)"
+                  >
+                    ×
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+
+          <form class="set-draft" [formGroup]="row.form" (ngSubmit)="addSet(row.log)">
+            <div class="set-draft__field">
+              <label class="field__label">Rip</label>
+              <input class="field__input num" type="number" min="0" formControlName="reps" />
+            </div>
+            <div class="set-draft__field">
+              <label class="field__label">Kg</label>
+              <input class="field__input num" type="number" min="0" step="0.5" formControlName="weight" />
+            </div>
+            <div class="set-draft__field set-draft__field--notes">
+              <label class="field__label">Note</label>
+              <input class="field__input" type="text" formControlName="notes" placeholder="opzionale" />
+            </div>
+            <button type="submit" class="set-draft__add" aria-label="Aggiungi serie">+</button>
+          </form>
+        </div>
+      }
+    </div>
+  </div>
+}

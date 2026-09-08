@@ -1,0 +1,35 @@
+@if (!checking()) {
+  <div class="page">
+    <header class="page__header">
+      <h1>Allenamento</h1>
+    </header>
+
+    @if (plans().length === 0) {
+      <div class="empty">
+        <p class="empty__title">Nessuna scheda disponibile</p>
+        <p class="empty__body">
+          Crea prima una scheda con gli esercizi che vuoi seguire, poi torna
+          qui per iniziare ad allenarti.
+        </p>
+        <a class="btn btn--primary" routerLink="/schede/nuova">Crea una scheda</a>
+      </div>
+    } @else {
+      <p class="page__hint">Scegli la scheda da seguire oggi:</p>
+      <ul class="plan-pick-list">
+        @for (plan of plans(); track plan.id) {
+          <li>
+            <button
+              type="button"
+              class="plan-pick"
+              [disabled]="!!startingPlanId()"
+              (click)="start(plan.id)"
+            >
+              <span class="plan-pick__name">{{ plan.name }}</span>
+              <span class="plan-pick__meta">{{ plan.exercises.length }} esercizi</span>
+            </button>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+}

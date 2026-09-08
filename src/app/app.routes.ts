@@ -20,10 +20,16 @@ export const routes: Routes = [
   {
     path: 'allenamento',
     loadComponent: () =>
-      import('./shared/placeholder-page/placeholder-page').then(
-        (m) => m.PlaceholderPage,
+      import('./features/sessions/session-start/session-start').then(
+        (m) => m.SessionStart,
       ),
-    data: { title: 'Allenamento', message: 'Il log delle sessioni arriva nel prossimo passo.' },
+  },
+  {
+    path: 'allenamento/sessione/:id',
+    loadComponent: () =>
+      import('./features/sessions/session-log/session-log').then(
+        (m) => m.SessionLog,
+      ),
   },
   {
     path: 'storico',

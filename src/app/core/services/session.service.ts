@@ -1,14 +1,19 @@
-import { Injectable, signal } from '@angular/core';
+import { inject, Injectable, signal } from '@angular/core';
 import { db } from '../db/gymtrack-db';
 import { generateId } from '../db/id.util';
 import {
+  ExerciseLog,
   NewWorkoutSession,
   ProgressionPoint,
   WorkoutSession,
 } from '../models/workout-session.model';
+import { WorkoutPlan } from '../models/workout-plan.model';
+import { ExerciseService } from './exercise.service';
 
 @Injectable({ providedIn: 'root' })
 export class SessionService {
+  private readonly exerciseService = inject(ExerciseService);
+
   /** Storico sessioni, più recenti prima. */
   private readonly _sessions = signal<WorkoutSession[]>([]);
   readonly sessions = this._sessions.asReadonly();
@@ -44,6 +49,52 @@ export class SessionService {
 
   async getById(id: string): Promise<WorkoutSession | undefined> {
     return db.sessions.get(id);
+  }
+
+  /**
+   * Una sessione senza finishedAt è un allenamento in corso (o lasciato a
+   * metà, es. chiusura accidentale del browser in palestra). Usata per far
+   * riprendere automaticamente l'allenamento invece di farne iniziare uno
+   * nuovo per sbaglio.
+   */
+  async getActiveSession(): Promise<WorkoutSession | undefined> {
+    const all = await db.sessions.toArray();
+    return all
+      .filter((s) => !s.finishedAt)
+      .sort((a, b) => b.startedAt - a.startedAt)[0];
+  }
+
+  /**
+   * Crea la sessione a partire da una scheda: un ExerciseLog vuoto (sets: [])
+   * per ciascun esercizio della scheda, pronto per essere riempito durante
+   * l'allenamento. La sessione viene salvata subito, non solo alla fine,
+   * così non si perde nulla se il telefono si blocca a metà allenamento.
+   */
+  async startFromPlan(plan: WorkoutPlan): Promise<WorkoutSession> {
+    const exerciseLogs: ExerciseLog[] = [];
+    for (const pe of [...plan.exercises].sort((a, b) => a.order - b.order)) {
+      const exercise = await this.exerciseService.getById(pe.exerciseId);
+      exerciseLogs.push({
+        id: generateId(),
+        exerciseId: pe.exerciseId,
+        exerciseName: exercise?.name ?? 'Esercizio',
+        order: pe.order,
+        sets: [],
+      });
+    }
+
+    const now = Date.now();
+    return this.create({
+      planId: plan.id,
+      planName: plan.name,
+      date: now,
+      startedAt: now,
+      exerciseLogs,
+    });
+  }
+
+  async finish(id: string): Promise<void> {
+    await this.update(id, { finishedAt: Date.now() });
   }
 
   /**
