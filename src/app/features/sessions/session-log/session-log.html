@@ -28,46 +28,63 @@
         <div class="exercise-log-card">
           <div class="exercise-log-card__head">
             <span class="exercise-log-card__name">{{ row.log.exerciseName }}</span>
-            @if (targetSummary(row.log.exerciseId); as summary) {
-              <span class="exercise-log-card__target">{{ summary }}</span>
+            @if (row.isComplete) {
+              <span class="exercise-log-card__done">✓ completato</span>
             }
           </div>
 
-          @if (row.log.sets.length > 0) {
-            <ul class="set-list">
-              @for (set of row.log.sets; track set.id) {
-                <li class="set-row">
-                  <span class="set-row__label num">Serie {{ set.setNumber }}</span>
-                  <span class="set-row__value num">{{ set.reps }} rip</span>
-                  <span class="set-row__value num">{{ set.weight }} kg</span>
-                  <button
-                    type="button"
-                    class="set-row__remove"
-                    aria-label="Rimuovi serie"
-                    (click)="removeSet(row.log, set.id)"
-                  >
-                    ×
-                  </button>
+          @if (row.hasPlan) {
+            <ul class="slot-list">
+              @for (slot of row.slots; track slot.index) {
+                <li>
+                  @switch (slot.status) {
+                    @case ('done') {
+                      <div class="set-row">
+                        <span class="set-row__label num">Serie {{ slot.index + 1 }}</span>
+                        <span class="set-row__value num">{{ slot.set!.reps }} rip</span>
+                        <span class="set-row__value num">{{ slot.set!.weight }} kg</span>
+                        @if (slot.index === row.log.sets.length - 1) {
+                          <button
+                            type="button"
+                            class="set-row__remove"
+                            aria-label="Rimuovi ultima serie"
+                            (click)="removeLastSet(row.log)"
+                          >
+                            ×
+                          </button>
+                        }
+                      </div>
+                    }
+                    @case ('current') {
+                      <form class="set-draft" [formGroup]="row.form" (ngSubmit)="addSet(row.log)">
+                        <span class="set-draft__index num">{{ slot.index + 1 }}</span>
+                        <div class="set-draft__field">
+                          <label class="field__label">Rip</label>
+                          <input class="field__input num" type="number" min="0" formControlName="reps" />
+                        </div>
+                        <div class="set-draft__field">
+                          <label class="field__label">Kg</label>
+                          <input class="field__input num" type="number" min="0" step="0.5" formControlName="weight" />
+                        </div>
+                        <button type="submit" class="set-draft__add" aria-label="Conferma serie">✓</button>
+                      </form>
+                    }
+                    @case ('upcoming') {
+                      <div class="set-row set-row--upcoming">
+                        <span class="set-row__label num">Serie {{ slot.index + 1 }}</span>
+                        <span class="set-row__value num">{{ slot.target?.reps }} rip</span>
+                        <span class="set-row__value num">{{ slot.target?.weight ?? '—' }} kg</span>
+                      </div>
+                    }
+                  }
                 </li>
               }
             </ul>
+          } @else {
+            <p class="exercise-log-card__no-plan">
+              Nessuna serie pianificata per questo esercizio (la scheda originale potrebbe essere stata modificata).
+            </p>
           }
-
-          <form class="set-draft" [formGroup]="row.form" (ngSubmit)="addSet(row.log)">
-            <div class="set-draft__field">
-              <label class="field__label">Rip</label>
-              <input class="field__input num" type="number" min="0" formControlName="reps" />
-            </div>
-            <div class="set-draft__field">
-              <label class="field__label">Kg</label>
-              <input class="field__input num" type="number" min="0" step="0.5" formControlName="weight" />
-            </div>
-            <div class="set-draft__field set-draft__field--notes">
-              <label class="field__label">Note</label>
-              <input class="field__input" type="text" formControlName="notes" placeholder="opzionale" />
-            </div>
-            <button type="submit" class="set-draft__add" aria-label="Aggiungi serie">+</button>
-          </form>
         </div>
       }
     </div>

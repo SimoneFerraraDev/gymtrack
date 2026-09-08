@@ -17,6 +17,15 @@ function firstNumber(text: string): number | null {
   return match ? Number(match[0]) : null;
 }
 
+type SlotStatus = 'done' | 'current' | 'upcoming';
+
+interface SlotView {
+  index: number;
+  status: SlotStatus;
+  set?: SetLog;
+  target?: PlanSetTarget;
+}
+
 @Component({
   selector: 'app-session-log',
   imports: [ReactiveFormsModule],
@@ -47,15 +56,42 @@ export class SessionLog implements OnInit {
     ReturnType<typeof this.buildDraftForm>
   >();
 
-  /** Coppie (log, form-bozza) pronte per il template, ricalcolate a ogni
-   *  variazione della sessione (aggiunta/rimozione set). */
+  /**
+   * Vista per il template: per ogni esercizio, uno slot per ogni serie
+   * pianificata nella scheda — non una serie in più, non una in meno.
+   * Se l'esercizio non ha un piano associato (caso raro, es. scheda
+   * cancellata dopo l'avvio della sessione), si passa a un elenco libero
+   * senza limite (hasPlan: false).
+   */
   readonly rows = computed(() => {
     const session = this.session();
     if (!session) return [];
-    return session.exerciseLogs.map((log) => ({
-      log,
-      form: this.draftForms.get(log.id)!,
-    }));
+    return session.exerciseLogs.map((log) => {
+      const targets = this.targetsByExerciseId.get(log.exerciseId) ?? [];
+      const hasPlan = targets.length > 0;
+      const slotCount = hasPlan
+        ? Math.max(targets.length, log.sets.length)
+        : 0;
+
+      const slots: SlotView[] = [];
+      for (let i = 0; i < slotCount; i++) {
+        if (i < log.sets.length) {
+          slots.push({ index: i, status: 'done', set: log.sets[i], target: targets[i] });
+        } else if (i === log.sets.length) {
+          slots.push({ index: i, status: 'current', target: targets[i] });
+        } else {
+          slots.push({ index: i, status: 'upcoming', target: targets[i] });
+        }
+      }
+
+      return {
+        log,
+        hasPlan,
+        slots,
+        isComplete: hasPlan && log.sets.length >= targets.length,
+        form: this.draftForms.get(log.id)!,
+      };
+    });
   });
 
   async ngOnInit(): Promise<void> {
@@ -99,17 +135,10 @@ export class SessionLog implements OnInit {
     });
   }
 
-  /** Riepilogo di tutte le serie pianificate per l'esercizio, mostrato come
-   *  promemoria in testa alla card (es. "10@40kg · 10@45kg · 10@50kg"). */
-  targetSummary(exerciseId: string): string | null {
-    const targets = this.targetsByExerciseId.get(exerciseId);
-    if (!targets || targets.length === 0) return null;
-    return targets
-      .map((t) => `${t.reps}${t.weight ? '@' + t.weight + 'kg' : ''}`)
-      .join(' · ');
-  }
-
   async addSet(log: ExerciseLog): Promise<void> {
+    const targets = this.targetsByExerciseId.get(log.exerciseId) ?? [];
+    if (targets.length > 0 && log.sets.length >= targets.length) return; // scheda già completata
+
     const form = this.draftForms.get(log.id);
     const session = this.session();
     if (!form || !session) return;
@@ -131,9 +160,8 @@ export class SessionLog implements OnInit {
     this.session.set(updated);
     await this.sessionService.update(session.id, { exerciseLogs: updatedLogs });
 
-    // Prepara il form per la serie successiva, suggerendo il carico/rip
-    // pianificati per quella serie (che possono differire da quella appena
-    // loggata) invece di ripetere semplicemente gli ultimi valori inseriti.
+    // Prepara il form per la serie successiva (se ce n'è ancora una
+    // pianificata), suggerendo il carico/rip previsti per quella.
     const updatedLog = updatedLogs.find((l) => l.id === log.id)!;
     const next = this.nextTargetFor(updatedLog);
     form.patchValue({
@@ -143,19 +171,15 @@ export class SessionLog implements OnInit {
     });
   }
 
-  async removeSet(log: ExerciseLog, setId: string): Promise<void> {
+  /** Rimuove solo l'ultima serie loggata di un esercizio: mantiene lo slot
+   *  successivo sempre allineato in ordine con le serie pianificate. */
+  async removeLastSet(log: ExerciseLog): Promise<void> {
     const session = this.session();
-    if (!session) return;
+    const lastSet = log.sets.at(-1);
+    if (!session || !lastSet) return;
 
     const updatedLogs = session.exerciseLogs.map((l) =>
-      l.id === log.id
-        ? {
-            ...l,
-            sets: l.sets
-              .filter((s) => s.id !== setId)
-              .map((s, i) => ({ ...s, setNumber: i + 1 })),
-          }
-        : l,
+      l.id === log.id ? { ...l, sets: l.sets.slice(0, -1) } : l,
     );
     const updated = { ...session, exerciseLogs: updatedLogs };
     this.session.set(updated);
