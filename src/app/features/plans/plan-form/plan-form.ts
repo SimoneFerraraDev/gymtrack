@@ -2,17 +2,22 @@ import { Component, effect, inject, input } from '@angular/core';
 import {
   FormArray,
   FormBuilder,
+  FormGroup,
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ExerciseService } from '../../../core/services/exercise.service';
 import { PlanService } from '../../../core/services/plan.service';
-import { PlanExercise } from '../../../core/models/workout-plan.model';
+import {
+  PlanExercise,
+  PlanSetTarget,
+} from '../../../core/models/workout-plan.model';
+import { BackButton } from '../../../shared/back-button/back-button';
 
 @Component({
   selector: 'app-plan-form',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, BackButton],
   templateUrl: './plan-form.html',
   styleUrl: './plan-form.scss',
 })
@@ -30,9 +35,7 @@ export class PlanForm {
 
   protected readonly form = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.maxLength(60)]],
-    exercises: this.fb.array<
-      ReturnType<typeof this.buildExerciseRow>
-    >([]),
+    exercises: this.fb.array<ReturnType<typeof this.buildExerciseRow>>([]),
   });
 
   constructor() {
@@ -53,13 +56,35 @@ export class PlanForm {
     return this.form.controls.exercises;
   }
 
-  private buildExerciseRow(initial?: Partial<PlanExercise> & { exerciseName?: string }) {
+  targetsOf(exerciseIndex: number): FormArray {
+    return (this.exercises.at(exerciseIndex) as FormGroup).get(
+      'targets',
+    ) as FormArray;
+  }
+
+  private buildTargetRow(initial?: Partial<PlanSetTarget>) {
     return this.fb.nonNullable.group({
-      exerciseName: [initial?.exerciseName ?? '', Validators.required],
-      targetSets: [initial?.targetSets ?? 3, [Validators.required, Validators.min(1)]],
-      targetReps: [initial?.targetReps ?? '8-10', Validators.required],
-      targetWeight: [initial?.targetWeight ?? null],
-      notes: [initial?.notes ?? ''],
+      reps: [initial?.reps ?? '10', Validators.required],
+      weight: [initial?.weight ?? null],
+    });
+  }
+
+  private buildExerciseRow(initial?: {
+    exerciseName?: string;
+    targets?: PlanSetTarget[];
+    notes?: string;
+  }) {
+    const initialTargets =
+      initial?.targets && initial.targets.length > 0
+        ? initial.targets
+        : [{ reps: '10' }];
+    return this.fb.group({
+      exerciseName: this.fb.nonNullable.control(
+        initial?.exerciseName ?? '',
+        Validators.required,
+      ),
+      notes: this.fb.nonNullable.control(initial?.notes ?? ''),
+      targets: this.fb.array(initialTargets.map((t) => this.buildTargetRow(t))),
     });
   }
 
@@ -87,6 +112,21 @@ export class PlanForm {
     arr.insert(index + 1, ctrl);
   }
 
+  /** Aggiunge una nuova serie pianificata, ripetendo i valori dell'ultima
+   *  come comodo punto di partenza (spesso rip/peso sono simili tra serie
+   *  vicine, es. una rampa di carico). */
+  addTargetRow(exerciseIndex: number): void {
+    const targets = this.targetsOf(exerciseIndex);
+    const last = targets.length > 0 ? targets.at(targets.length - 1).value : undefined;
+    targets.push(this.buildTargetRow(last));
+  }
+
+  removeTargetRow(exerciseIndex: number, targetIndex: number): void {
+    const targets = this.targetsOf(exerciseIndex);
+    if (targets.length <= 1) return; // almeno una serie pianificata
+    targets.removeAt(targetIndex);
+  }
+
   private async loadForEdit(planId: string): Promise<void> {
     const plan = await this.planService.getById(planId);
     if (!plan) {
@@ -97,7 +137,11 @@ export class PlanForm {
     for (const pe of [...plan.exercises].sort((a, b) => a.order - b.order)) {
       const exercise = await this.exerciseService.getById(pe.exerciseId);
       this.exercises.push(
-        this.buildExerciseRow({ ...pe, exerciseName: exercise?.name ?? '' }),
+        this.buildExerciseRow({
+          exerciseName: exercise?.name ?? '',
+          targets: pe.targets,
+          notes: pe.notes,
+        }),
       );
     }
     if (this.exercises.length === 0) this.addExerciseRow();
@@ -122,9 +166,10 @@ export class PlanForm {
           id: crypto.randomUUID(),
           exerciseId: exercise.id,
           order: order++,
-          targetSets: row.targetSets,
-          targetReps: row.targetReps,
-          targetWeight: row.targetWeight ?? undefined,
+          targets: row.targets.map((t) => ({
+            reps: t.reps,
+            weight: t.weight ?? undefined,
+          })),
           notes: row.notes || undefined,
         });
       }

@@ -2,7 +2,7 @@ import { Component, computed, inject, input, OnInit, signal } from '@angular/cor
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { generateId } from '../../../core/db/id.util';
-import { PlanExercise } from '../../../core/models/workout-plan.model';
+import { PlanSetTarget } from '../../../core/models/workout-plan.model';
 import {
   ExerciseLog,
   SetLog,
@@ -10,6 +10,7 @@ import {
 } from '../../../core/models/workout-session.model';
 import { PlanService } from '../../../core/services/plan.service';
 import { SessionService } from '../../../core/services/session.service';
+import { BackButton } from '../../../shared/back-button/back-button';
 
 /** Estrae il primo numero da una stringa tipo "8-10" o "AMRAP" (→ null). */
 function firstNumber(text: string): number | null {
@@ -19,7 +20,7 @@ function firstNumber(text: string): number | null {
 
 @Component({
   selector: 'app-session-log',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, BackButton],
   templateUrl: './session-log.html',
   styleUrl: './session-log.scss',
 })
@@ -35,8 +36,10 @@ export class SessionLog implements OnInit {
   readonly loading = signal(true);
   readonly finishing = signal(false);
 
-  /** Target della scheda originale, per esercizio — solo a scopo informativo. */
-  private readonly targetByExerciseId = new Map<string, PlanExercise>();
+  /** Serie pianificate dalla scheda originale, per esercizio: il carico può
+   *  variare da una serie all'altra (es. rampa 40-45-50kg), quindi qui
+   *  teniamo l'intero array invece di un singolo valore. */
+  private readonly targetsByExerciseId = new Map<string, PlanSetTarget[]>();
 
   /** Form del "prossimo set" da aggiungere, uno per ExerciseLog. */
   readonly draftForms = new Map<
@@ -66,7 +69,7 @@ export class SessionLog implements OnInit {
     const plan = await this.planService.getById(session.planId);
     if (plan) {
       for (const pe of plan.exercises) {
-        this.targetByExerciseId.set(pe.exerciseId, pe);
+        this.targetsByExerciseId.set(pe.exerciseId, pe.targets);
       }
     }
 
@@ -77,21 +80,33 @@ export class SessionLog implements OnInit {
     this.loading.set(false);
   }
 
+  /** Il target pianificato per la PROSSIMA serie da loggare (indice = quante
+   *  serie sono già state fatte). Torna null oltre le serie pianificate. */
+  private nextTargetFor(log: ExerciseLog): PlanSetTarget | null {
+    const targets = this.targetsByExerciseId.get(log.exerciseId);
+    return targets?.[log.sets.length] ?? null;
+  }
+
   private buildDraftForm(log: ExerciseLog) {
     const lastSet = log.sets.at(-1);
-    const target = this.targetByExerciseId.get(log.exerciseId);
+    const next = this.nextTargetFor(log);
     return this.fb.nonNullable.group({
-      reps: [lastSet?.reps ?? firstNumber(target?.targetReps ?? '') ?? 8],
-      weight: [lastSet?.weight ?? target?.targetWeight ?? 0],
+      reps: [
+        next ? (firstNumber(next.reps) ?? lastSet?.reps ?? 8) : (lastSet?.reps ?? 8),
+      ],
+      weight: [next?.weight ?? lastSet?.weight ?? 0],
       notes: [''],
     });
   }
 
-  targetLabel(exerciseId: string): string | null {
-    const t = this.targetByExerciseId.get(exerciseId);
-    if (!t) return null;
-    const weight = t.targetWeight ? ` @ ${t.targetWeight}kg` : '';
-    return `Target: ${t.targetSets} x ${t.targetReps}${weight}`;
+  /** Riepilogo di tutte le serie pianificate per l'esercizio, mostrato come
+   *  promemoria in testa alla card (es. "10@40kg · 10@45kg · 10@50kg"). */
+  targetSummary(exerciseId: string): string | null {
+    const targets = this.targetsByExerciseId.get(exerciseId);
+    if (!targets || targets.length === 0) return null;
+    return targets
+      .map((t) => `${t.reps}${t.weight ? '@' + t.weight + 'kg' : ''}`)
+      .join(' · ');
   }
 
   async addSet(log: ExerciseLog): Promise<void> {
@@ -114,8 +129,18 @@ export class SessionLog implements OnInit {
     );
     const updated = { ...session, exerciseLogs: updatedLogs };
     this.session.set(updated);
-    form.patchValue({ notes: '' });
     await this.sessionService.update(session.id, { exerciseLogs: updatedLogs });
+
+    // Prepara il form per la serie successiva, suggerendo il carico/rip
+    // pianificati per quella serie (che possono differire da quella appena
+    // loggata) invece di ripetere semplicemente gli ultimi valori inseriti.
+    const updatedLog = updatedLogs.find((l) => l.id === log.id)!;
+    const next = this.nextTargetFor(updatedLog);
+    form.patchValue({
+      reps: next ? (firstNumber(next.reps) ?? raw.reps) : raw.reps,
+      weight: next?.weight ?? raw.weight,
+      notes: '',
+    });
   }
 
   async removeSet(log: ExerciseLog, setId: string): Promise<void> {

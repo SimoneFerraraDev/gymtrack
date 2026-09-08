@@ -3,10 +3,11 @@ import { DecimalPipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { WorkoutSession } from '../../../core/models/workout-session.model';
 import { SessionService } from '../../../core/services/session.service';
+import { BackButton } from '../../../shared/back-button/back-button';
 
 @Component({
   selector: 'app-session-detail',
-  imports: [DecimalPipe],
+  imports: [DecimalPipe, BackButton],
   templateUrl: './session-detail.html',
   styleUrl: './session-detail.scss',
 })

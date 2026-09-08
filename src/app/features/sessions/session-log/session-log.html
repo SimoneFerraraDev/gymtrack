@@ -1,9 +1,12 @@
 @if (!loading() && session(); as s) {
   <div class="page">
     <header class="page__header session-header">
-      <div>
-        <h1>{{ s.planName }}</h1>
-        <p class="session-header__meta">Iniziato alle {{ startedAtLabel(s.startedAt) }}</p>
+      <div class="page__header-title">
+        <app-back-button to="/allenamento" />
+        <div>
+          <h1>{{ s.planName }}</h1>
+          <p class="session-header__meta">Iniziato alle {{ startedAtLabel(s.startedAt) }}</p>
+        </div>
       </div>
       <button type="button" class="btn btn--secondary" (click)="finishWorkout()" [disabled]="finishing()">
         Termina
@@ -15,8 +18,8 @@
         <div class="exercise-log-card">
           <div class="exercise-log-card__head">
             <span class="exercise-log-card__name">{{ row.log.exerciseName }}</span>
-            @if (targetLabel(row.log.exerciseId); as target) {
-              <span class="exercise-log-card__target">{{ target }}</span>
+            @if (targetSummary(row.log.exerciseId); as summary) {
+              <span class="exercise-log-card__target">{{ summary }}</span>
             }
           </div>
 

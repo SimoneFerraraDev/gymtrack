@@ -1,9 +1,12 @@
 @if (!loading() && session(); as s) {
   <div class="page">
     <header class="page__header">
-      <div>
-        <h1>{{ s.planName }}</h1>
-        <p class="detail-meta">{{ dateLabel(s.date) }}</p>
+      <div class="page__header-title">
+        <app-back-button to="/storico" />
+        <div>
+          <h1>{{ s.planName }}</h1>
+          <p class="detail-meta">{{ dateLabel(s.date) }}</p>
+        </div>
       </div>
     </header>
 
