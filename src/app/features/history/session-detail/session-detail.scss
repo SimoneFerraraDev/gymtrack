@@ -5,6 +5,14 @@
   text-transform: capitalize;
 }
 
+.log-section-title {
+  font-size: var(--text-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-faint);
+  margin: 0 0 var(--space-2);
+}
+
 .stat-row {
   display: flex;
   gap: var(--space-3);

@@ -19,7 +19,95 @@
     />
   </div>
 
-  <h2 class="section-title">Esercizi</h2>
+  <h2 class="section-title">Riscaldamento</h2>
+  <p class="section-hint">Uguale per tutte le settimane della scheda.</p>
+
+  <div formArrayName="warmup" class="exercise-rows">
+    @for (row of warmup.controls; track row; let wi = $index) {
+      <div class="exercise-row exercise-row--warmup" [formGroupName]="wi">
+        <div class="exercise-row__top">
+          <input
+            class="field__input exercise-row__name"
+            type="text"
+            formControlName="exerciseName"
+            placeholder="Es. Cyclette, mobilità spalle"
+            autocomplete="off"
+          />
+        </div>
+
+        <div formArrayName="targets" class="target-rows">
+          @for (target of warmupTargetsOf(wi).controls; track target; let ti = $index) {
+            <div class="target-row" [formGroupName]="ti">
+              <span class="target-row__index num">{{ ti + 1 }}</span>
+              <div class="target-row__field">
+                <label class="field__label">Rip</label>
+                <input class="field__input num" type="text" formControlName="reps" placeholder="8-10" />
+              </div>
+              <div class="target-row__field">
+                <label class="field__label">Kg</label>
+                <input class="field__input num" type="number" step="0.5" formControlName="weight" placeholder="—" />
+              </div>
+              <button
+                type="button"
+                class="target-row__remove"
+                aria-label="Rimuovi serie"
+                [disabled]="warmupTargetsOf(wi).length <= 1"
+                (click)="removeWarmupTargetRow(wi, ti)"
+              >
+                ×
+              </button>
+            </div>
+          }
+        </div>
+
+        <button type="button" class="btn btn--secondary target-rows__add" (click)="addWarmupTargetRow(wi)">
+          + Aggiungi serie
+        </button>
+
+        <div class="field exercise-row__notes">
+          <label class="field__label">Note</label>
+          <input class="field__input" type="text" formControlName="notes" placeholder="Es. ritmo lento, focus mobilità" />
+        </div>
+
+        <button type="button" class="btn btn--danger exercise-row__remove" (click)="removeWarmupRow(wi)">
+          Rimuovi esercizio riscaldamento
+        </button>
+      </div>
+    }
+  </div>
+
+  <button type="button" class="btn btn--secondary btn--block" (click)="addWarmupRow()">
+    + Aggiungi esercizio di riscaldamento
+  </button>
+
+  <h2 class="section-title">Settimane</h2>
+  <p class="section-hint">Gli esercizi sono gli stessi in ogni settimana: cambiano solo serie, ripetizioni e carico.</p>
+
+  <div class="week-tabs">
+    @for (week of weeks.controls; track week; let wi = $index) {
+      <button
+        type="button"
+        class="week-tab"
+        [class.week-tab--active]="selectedWeek() === wi"
+        (click)="selectWeek(wi)"
+      >
+        Sett. {{ wi + 1 }}
+      </button>
+    }
+    <button type="button" class="week-tab week-tab--add" (click)="addWeek()">+</button>
+  </div>
+
+  @if (weeks.length > 1) {
+    <button
+      type="button"
+      class="btn btn--danger btn--block week-remove"
+      (click)="removeWeek(selectedWeek())"
+    >
+      Rimuovi settimana {{ selectedWeek() + 1 }}
+    </button>
+  }
+
+  <h2 class="section-title">Esercizi — settimana {{ selectedWeek() + 1 }}</h2>
 
   <div formArrayName="exercises" class="exercise-rows">
     @for (row of exercises.controls; track row; let i = $index) {
@@ -43,12 +131,12 @@
         </div>
 
         <p class="targets-hint">
-          Serie pianificate — ripetizioni e carico possono variare da una serie all'altra
+          Serie pianificate per la settimana {{ selectedWeek() + 1 }} — ripetizioni e carico possono variare da una serie all'altra
         </p>
 
-        <div formArrayName="targets" class="target-rows">
+        <div class="target-rows">
           @for (target of targetsOf(i).controls; track target; let ti = $index) {
-            <div class="target-row" [formGroupName]="ti">
+            <div class="target-row" [formGroup]="asGroup(target)">
               <span class="target-row__index num">{{ ti + 1 }}</span>
               <div class="target-row__field">
                 <label class="field__label">Rip</label>

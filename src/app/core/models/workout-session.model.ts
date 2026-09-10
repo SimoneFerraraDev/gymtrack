@@ -8,6 +8,7 @@ export interface WorkoutSession {
   id: string;
   planId: string;
   planName: string;
+  weekNumber?: number; // settimana della scheda seguita in questa sessione (assente per schede senza settimane, retrocompatibilità)
   date: number; // giorno della sessione (epoch ms, normalizzato a mezzanotte)
   startedAt: number;
   finishedAt?: number;
@@ -20,6 +21,7 @@ export interface ExerciseLog {
   exerciseId: string; // FK -> Exercise
   exerciseName: string; // snapshot
   order: number;
+  isWarmup?: boolean; // true se viene dalla sezione riscaldamento della scheda
   sets: SetLog[];
 }
 

@@ -30,6 +30,9 @@ export class SessionDetail implements OnInit {
     );
   });
 
+  readonly warmupLogs = computed(() => this.session()?.exerciseLogs.filter((l) => l.isWarmup) ?? []);
+  readonly mainLogs = computed(() => this.session()?.exerciseLogs.filter((l) => !l.isWarmup) ?? []);
+
   async ngOnInit(): Promise<void> {
     const session = await this.sessionService.getById(this.id());
     if (!session) {

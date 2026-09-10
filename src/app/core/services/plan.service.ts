@@ -3,8 +3,11 @@ import { db } from '../db/gymtrack-db';
 import { generateId } from '../db/id.util';
 import {
   NewPlanExercise,
+  NewWarmupExercise,
   NewWorkoutPlan,
   PlanExercise,
+  PlanSetTarget,
+  WarmupExercise,
   WorkoutPlan,
 } from '../models/workout-plan.model';
 
@@ -20,19 +23,23 @@ export class PlanService {
 
   async refresh(): Promise<void> {
     const all = await db.plans.orderBy('updatedAt').reverse().toArray();
-    this._plans.set(all);
-    this.activePlans.set(all.filter((p) => !p.archived));
+    const normalized = all.map((p) => this.normalize(p));
+    this._plans.set(normalized);
+    this.activePlans.set(normalized.filter((p) => !p.archived));
   }
 
   async create(input: NewWorkoutPlan): Promise<WorkoutPlan> {
     const now = Date.now();
+    const exercises = input.exercises.map((e) => this.withId(e));
     const plan: WorkoutPlan = {
       ...input,
       id: generateId(),
       createdAt: now,
       updatedAt: now,
       archived: false,
-      exercises: input.exercises.map((e) => this.withId(e)),
+      exercises,
+      weeks: input.weeks,
+      warmup: input.warmup.map((w) => this.withWarmupId(w)),
     };
     await db.plans.add(plan);
     await this.refresh();
@@ -57,10 +64,43 @@ export class PlanService {
   }
 
   async getById(id: string): Promise<WorkoutPlan | undefined> {
-    return db.plans.get(id);
+    const plan = await db.plans.get(id);
+    return plan ? this.normalize(plan) : undefined;
   }
 
   private withId(input: NewPlanExercise): PlanExercise {
     return { ...input, id: generateId() };
+  }
+
+  private withWarmupId(input: NewWarmupExercise): WarmupExercise {
+    return { ...input, id: generateId() };
+  }
+
+  /**
+   * Retrocompatibilità: le schede create prima dell'introduzione delle
+   * settimane avevano i target direttamente su ogni PlanExercise (niente
+   * `weeks`, niente `warmup`). Qui le si porta alla forma attuale al volo,
+   * senza bisogno di una migrazione IndexedDB vera e propria: una singola
+   * settimana con quei target, riscaldamento vuoto.
+   */
+  private normalize(plan: WorkoutPlan): WorkoutPlan {
+    if (Array.isArray(plan.weeks) && plan.weeks.length > 0) {
+      return { ...plan, warmup: plan.warmup ?? [] };
+    }
+    const legacyExercises = plan.exercises as (PlanExercise & {
+      targets?: PlanSetTarget[];
+    })[];
+    return {
+      ...plan,
+      warmup: plan.warmup ?? [],
+      weeks: [
+        {
+          weekNumber: 1,
+          targetsByExerciseId: Object.fromEntries(
+            legacyExercises.map((e) => [e.id, e.targets ?? []]),
+          ) as Record<string, PlanSetTarget[]>,
+        },
+      ],
+    };
   }
 }

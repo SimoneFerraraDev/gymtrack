@@ -65,13 +65,28 @@ export class SessionService {
   }
 
   /**
-   * Crea la sessione a partire da una scheda: un ExerciseLog vuoto (sets: [])
-   * per ciascun esercizio della scheda, pronto per essere riempito durante
-   * l'allenamento. La sessione viene salvata subito, non solo alla fine,
-   * così non si perde nulla se il telefono si blocca a metà allenamento.
+   * Crea la sessione a partire da una scheda per la settimana scelta: un
+   * ExerciseLog vuoto (sets: []) per ciascun esercizio di riscaldamento
+   * (isWarmup: true) seguito da ciascun esercizio principale della scheda,
+   * pronto per essere riempito durante l'allenamento. La sessione viene
+   * salvata subito, non solo alla fine, così non si perde nulla se il
+   * telefono si blocca a metà allenamento.
    */
-  async startFromPlan(plan: WorkoutPlan): Promise<WorkoutSession> {
+  async startFromPlan(plan: WorkoutPlan, weekNumber: number): Promise<WorkoutSession> {
     const exerciseLogs: ExerciseLog[] = [];
+
+    for (const we of [...plan.warmup].sort((a, b) => a.order - b.order)) {
+      const exercise = await this.exerciseService.getById(we.exerciseId);
+      exerciseLogs.push({
+        id: generateId(),
+        exerciseId: we.exerciseId,
+        exerciseName: exercise?.name ?? 'Esercizio',
+        order: we.order,
+        isWarmup: true,
+        sets: [],
+      });
+    }
+
     for (const pe of [...plan.exercises].sort((a, b) => a.order - b.order)) {
       const exercise = await this.exerciseService.getById(pe.exerciseId);
       exerciseLogs.push({
@@ -87,6 +102,7 @@ export class SessionService {
     return this.create({
       planId: plan.id,
       planName: plan.name,
+      weekNumber,
       date: now,
       startedAt: now,
       exerciseLogs,

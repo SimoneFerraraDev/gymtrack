@@ -1,5 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { WorkoutPlan } from '../../../core/models/workout-plan.model';
 import { PlanService } from '../../../core/services/plan.service';
 import { SessionService } from '../../../core/services/session.service';
 
@@ -18,6 +19,10 @@ export class SessionStart implements OnInit {
   readonly checking = signal(true);
   readonly startingPlanId = signal<string | null>(null);
 
+  /** Scheda scelta ma in attesa che l'utente indichi la settimana da
+   *  seguire oggi (solo per schede con più di una settimana). */
+  readonly pickingWeekFor = signal<WorkoutPlan | null>(null);
+
   async ngOnInit(): Promise<void> {
     const active = await this.sessionService.getActiveSession();
     if (active) {
@@ -27,15 +32,26 @@ export class SessionStart implements OnInit {
     this.checking.set(false);
   }
 
-  async start(planId: string): Promise<void> {
+  async choosePlan(planId: string): Promise<void> {
     if (this.startingPlanId()) return;
-    this.startingPlanId.set(planId);
     const plan = await this.planService.getById(planId);
-    if (!plan) {
-      this.startingPlanId.set(null);
+    if (!plan) return;
+
+    if (plan.weeks.length <= 1) {
+      this.start(plan, plan.weeks[0]?.weekNumber ?? 1);
       return;
     }
-    const session = await this.sessionService.startFromPlan(plan);
+    this.pickingWeekFor.set(plan);
+  }
+
+  cancelWeekPick(): void {
+    this.pickingWeekFor.set(null);
+  }
+
+  async start(plan: WorkoutPlan, weekNumber: number): Promise<void> {
+    if (this.startingPlanId()) return;
+    this.startingPlanId.set(plan.id);
+    const session = await this.sessionService.startFromPlan(plan, weekNumber);
     this.router.navigateByUrl(`/allenamento/sessione/${session.id}`);
   }
 }

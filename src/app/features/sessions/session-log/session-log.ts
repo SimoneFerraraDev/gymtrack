@@ -45,9 +45,11 @@ export class SessionLog implements OnInit {
   readonly finishing = signal(false);
   readonly cancelling = signal(false);
 
-  /** Serie pianificate dalla scheda originale, per esercizio: il carico può
-   *  variare da una serie all'altra (es. rampa 40-45-50kg), quindi qui
-   *  teniamo l'intero array invece di un singolo valore. */
+  /** Serie pianificate dalla scheda originale (settimana seguita in questa
+   *  sessione, più il riscaldamento che non varia per settimana), per
+   *  esercizio: il carico può variare da una serie all'altra (es. rampa
+   *  40-45-50kg), quindi qui teniamo l'intero array invece di un singolo
+   *  valore. */
   private readonly targetsByExerciseId = new Map<string, PlanSetTarget[]>();
 
   /** Form del "prossimo set" da aggiungere, uno per ExerciseLog. */
@@ -63,7 +65,7 @@ export class SessionLog implements OnInit {
    * cancellata dopo l'avvio della sessione), si passa a un elenco libero
    * senza limite (hasPlan: false).
    */
-  readonly rows = computed(() => {
+  private readonly rows = computed(() => {
     const session = this.session();
     if (!session) return [];
     return session.exerciseLogs.map((log) => {
@@ -86,6 +88,7 @@ export class SessionLog implements OnInit {
 
       return {
         log,
+        isWarmup: !!log.isWarmup,
         hasPlan,
         slots,
         isComplete: hasPlan && log.sets.length >= targets.length,
@@ -93,6 +96,9 @@ export class SessionLog implements OnInit {
       };
     });
   });
+
+  readonly warmupRows = computed(() => this.rows().filter((r) => r.isWarmup));
+  readonly mainRows = computed(() => this.rows().filter((r) => !r.isWarmup));
 
   async ngOnInit(): Promise<void> {
     const session = await this.sessionService.getById(this.id());
@@ -104,8 +110,15 @@ export class SessionLog implements OnInit {
 
     const plan = await this.planService.getById(session.planId);
     if (plan) {
-      for (const pe of plan.exercises) {
-        this.targetsByExerciseId.set(pe.exerciseId, pe.targets);
+      const week =
+        plan.weeks.find((w) => w.weekNumber === session.weekNumber) ?? plan.weeks[0];
+      if (week) {
+        for (const pe of plan.exercises) {
+          this.targetsByExerciseId.set(pe.exerciseId, week.targetsByExerciseId[pe.id] ?? []);
+        }
+      }
+      for (const we of plan.warmup) {
+        this.targetsByExerciseId.set(we.exerciseId, we.targets);
       }
     }
 
