@@ -13,8 +13,12 @@ export class PlanList {
 
   readonly plans = this.planService.activePlans;
 
-  exerciseCountLabel(count: number): string {
-    return count === 1 ? '1 esercizio' : `${count} esercizi`;
+  dayCountLabel(count: number): string {
+    return count === 1 ? '1 giorno' : `${count} giorni`;
+  }
+
+  weekCountLabel(count: number): string {
+    return count === 1 ? '1 settimana' : `${count} settimane`;
   }
 
   updatedAtLabel(timestamp: number): string {

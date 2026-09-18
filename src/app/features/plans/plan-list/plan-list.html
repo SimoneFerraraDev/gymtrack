@@ -21,7 +21,7 @@
             <div class="plan-card__main">
               <span class="plan-card__name">{{ plan.name }}</span>
               <span class="plan-card__meta">
-                {{ exerciseCountLabel(plan.exercises.length) }} ·
+                {{ dayCountLabel(plan.days.length) }} · {{ weekCountLabel(plan.weeks.length) }} ·
                 {{ updatedAtLabel(plan.updatedAt) }}
               </span>
             </div>

@@ -6,7 +6,7 @@
         <div>
           <h1>{{ s.planName }}</h1>
           <p class="detail-meta">
-            {{ dateLabel(s.date) }}@if (s.weekNumber) { · Settimana {{ s.weekNumber }} }
+            {{ dateLabel(s.date) }}@if (s.weekNumber) { · Settimana {{ s.weekNumber }} }@if (s.dayLabel) { · Giorno {{ s.dayLabel }} }
           </p>
         </div>
       </div>

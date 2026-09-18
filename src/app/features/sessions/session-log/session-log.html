@@ -23,8 +23,12 @@
       </button>
     </header>
 
-    @if (s.weekNumber) {
-      <p class="week-label">Settimana {{ s.weekNumber }}</p>
+    @if (s.weekNumber || s.dayLabel) {
+      <p class="week-label">
+        @if (s.weekNumber) { Settimana {{ s.weekNumber }} }
+        @if (s.weekNumber && s.dayLabel) { · }
+        @if (s.dayLabel) { Giorno {{ s.dayLabel }} }
+      </p>
     }
 
     @if (warmupRows().length > 0) {

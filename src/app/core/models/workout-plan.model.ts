@@ -3,11 +3,13 @@
  * È il piano che consulti prima di allenarti; non contiene dati storici,
  * quelli vivono in WorkoutSession.
  *
- * La scheda è divisa in settimane (`weeks`) perché serie e ripetizioni
- * cambiano nel tempo, ma l'elenco degli esercizi principali (`exercises`)
- * resta lo stesso tra una settimana e l'altra: solo i target di ogni
- * `PlanWeek` variano. Il riscaldamento (`warmup`) è invece un blocco a
- * parte, unico per tutta la scheda (non cambia da una settimana all'altra).
+ * La scheda è divisa in giorni (`days`, es. A/B/C) perché ogni giorno ha
+ * i suoi esercizi (es. A = spinta, B = trazione, C = gambe), ed è divisa
+ * in settimane (`weeks`) perché serie e ripetizioni cambiano nel tempo.
+ * Gli esercizi di un giorno restano gli stessi tra una settimana e
+ * l'altra: solo i target di ogni `PlanWeek` variano. Il riscaldamento
+ * (`warmup`) è invece un blocco a parte, unico per tutta la scheda
+ * (uguale in tutti i giorni e in tutte le settimane).
  */
 export interface WorkoutPlan {
   id: string;
@@ -15,9 +17,22 @@ export interface WorkoutPlan {
   createdAt: number;
   updatedAt: number;
   archived: boolean;
-  exercises: PlanExercise[]; // catalogo esercizi principali: identità e ordine, condivisi da tutte le settimane
+  days: PlanDay[]; // in ordine; almeno uno (es. A, B, C)
   weeks: PlanWeek[]; // in ordine di weekNumber; almeno una
   warmup: WarmupExercise[]; // riscaldamento, unico per tutta la scheda
+}
+
+/**
+ * Un giorno di allenamento della scheda (es. "A", "B", "C"), con i propri
+ * esercizi. Gli stessi esercizi di un giorno valgono per tutte le
+ * settimane; a cambiare settimana per settimana sono solo i target,
+ * in `PlanWeek.targetsByExerciseId`.
+ */
+export interface PlanDay {
+  id: string;
+  label: string; // es. "A", "B", "C", o un nome libero come "Spinta"
+  order: number;
+  exercises: PlanExercise[];
 }
 
 /**
@@ -32,10 +47,11 @@ export interface PlanSetTarget {
 }
 
 /**
- * Un esercizio principale all'interno di una scheda: solo identità e
- * ordine, condivisi da tutte le settimane. I target (serie/rip/kg) di
- * ogni settimana vivono in `PlanWeek.targetsByExerciseId`, indicizzati
- * su `PlanExercise.id`.
+ * Un esercizio principale all'interno di un giorno: solo identità e
+ * ordine (nel giorno), condivisi da tutte le settimane. I target
+ * (serie/rip/kg) di ogni settimana vivono in
+ * `PlanWeek.targetsByExerciseId`, indicizzati su `PlanExercise.id`
+ * (id univoco a prescindere dal giorno che lo contiene).
  */
 export interface PlanExercise {
   id: string;
@@ -45,7 +61,11 @@ export interface PlanExercise {
   notes?: string;
 }
 
-/** Una settimana della scheda, con i target serie per serie di ogni esercizio. */
+/**
+ * Una settimana della scheda, con i target serie per serie di ogni
+ * esercizio di ogni giorno: la mappa è unica (non annidata per giorno)
+ * perché `PlanExercise.id` è già univoco in tutta la scheda.
+ */
 export interface PlanWeek {
   weekNumber: number; // 1-based, in ordine
   targetsByExerciseId: Record<string, PlanSetTarget[]>; // chiave = PlanExercise.id
@@ -54,7 +74,7 @@ export interface PlanWeek {
 /**
  * Un esercizio di riscaldamento: stessa forma di un esercizio principale
  * (nome + serie/rip pianificate) ma con un unico set di target, uguale
- * per tutta la scheda invece di variare a settimana.
+ * per tutta la scheda invece di variare a settimana o a giorno.
  */
 export interface WarmupExercise {
   id: string;
@@ -68,6 +88,3 @@ export type NewWorkoutPlan = Omit<
   WorkoutPlan,
   'id' | 'createdAt' | 'updatedAt' | 'archived'
 >;
-
-export type NewPlanExercise = Omit<PlanExercise, 'id'>;
-export type NewWarmupExercise = Omit<WarmupExercise, 'id'>;

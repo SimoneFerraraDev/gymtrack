@@ -23,6 +23,10 @@ export class SessionStart implements OnInit {
    *  seguire oggi (solo per schede con più di una settimana). */
   readonly pickingWeekFor = signal<WorkoutPlan | null>(null);
 
+  /** Scheda + settimana scelte ma in attesa che l'utente indichi il
+   *  giorno da seguire oggi (solo per schede con più di un giorno). */
+  readonly pickingDayFor = signal<{ plan: WorkoutPlan; weekNumber: number } | null>(null);
+
   async ngOnInit(): Promise<void> {
     const active = await this.sessionService.getActiveSession();
     if (active) {
@@ -38,7 +42,7 @@ export class SessionStart implements OnInit {
     if (!plan) return;
 
     if (plan.weeks.length <= 1) {
-      this.start(plan, plan.weeks[0]?.weekNumber ?? 1);
+      this.afterWeekChosen(plan, plan.weeks[0]?.weekNumber ?? 1);
       return;
     }
     this.pickingWeekFor.set(plan);
@@ -48,10 +52,27 @@ export class SessionStart implements OnInit {
     this.pickingWeekFor.set(null);
   }
 
-  async start(plan: WorkoutPlan, weekNumber: number): Promise<void> {
+  chooseWeek(plan: WorkoutPlan, weekNumber: number): void {
+    this.pickingWeekFor.set(null);
+    this.afterWeekChosen(plan, weekNumber);
+  }
+
+  private afterWeekChosen(plan: WorkoutPlan, weekNumber: number): void {
+    if (plan.days.length <= 1) {
+      this.start(plan, weekNumber, plan.days[0]?.id ?? '');
+      return;
+    }
+    this.pickingDayFor.set({ plan, weekNumber });
+  }
+
+  cancelDayPick(): void {
+    this.pickingDayFor.set(null);
+  }
+
+  async start(plan: WorkoutPlan, weekNumber: number, dayId: string): Promise<void> {
     if (this.startingPlanId()) return;
     this.startingPlanId.set(plan.id);
-    const session = await this.sessionService.startFromPlan(plan, weekNumber);
+    const session = await this.sessionService.startFromPlan(plan, weekNumber, dayId);
     this.router.navigateByUrl(`/allenamento/sessione/${session.id}`);
   }
 }

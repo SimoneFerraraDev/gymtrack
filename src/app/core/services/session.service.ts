@@ -65,14 +65,20 @@ export class SessionService {
   }
 
   /**
-   * Crea la sessione a partire da una scheda per la settimana scelta: un
-   * ExerciseLog vuoto (sets: []) per ciascun esercizio di riscaldamento
-   * (isWarmup: true) seguito da ciascun esercizio principale della scheda,
-   * pronto per essere riempito durante l'allenamento. La sessione viene
-   * salvata subito, non solo alla fine, così non si perde nulla se il
-   * telefono si blocca a metà allenamento.
+   * Crea la sessione a partire da una scheda per la settimana e il giorno
+   * scelti: un ExerciseLog vuoto (sets: []) per ciascun esercizio di
+   * riscaldamento (isWarmup: true, uguale per tutti i giorni) seguito da
+   * ciascun esercizio del giorno scelto, pronto per essere riempito
+   * durante l'allenamento. La sessione viene salvata subito, non solo
+   * alla fine, così non si perde nulla se il telefono si blocca a metà
+   * allenamento.
    */
-  async startFromPlan(plan: WorkoutPlan, weekNumber: number): Promise<WorkoutSession> {
+  async startFromPlan(
+    plan: WorkoutPlan,
+    weekNumber: number,
+    dayId: string,
+  ): Promise<WorkoutSession> {
+    const day = plan.days.find((d) => d.id === dayId) ?? plan.days[0];
     const exerciseLogs: ExerciseLog[] = [];
 
     for (const we of [...plan.warmup].sort((a, b) => a.order - b.order)) {
@@ -87,7 +93,7 @@ export class SessionService {
       });
     }
 
-    for (const pe of [...plan.exercises].sort((a, b) => a.order - b.order)) {
+    for (const pe of [...(day?.exercises ?? [])].sort((a, b) => a.order - b.order)) {
       const exercise = await this.exerciseService.getById(pe.exerciseId);
       exerciseLogs.push({
         id: generateId(),
@@ -103,6 +109,7 @@ export class SessionService {
       planId: plan.id,
       planName: plan.name,
       weekNumber,
+      dayLabel: day?.label,
       date: now,
       startedAt: now,
       exerciseLogs,

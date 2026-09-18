@@ -80,6 +80,44 @@
     + Aggiungi esercizio di riscaldamento
   </button>
 
+  <h2 class="section-title">Giorni</h2>
+  <p class="section-hint">Ogni giorno ha i propri esercizi (es. A = spinta, B = trazione, C = gambe).</p>
+
+  <div class="week-tabs">
+    @for (day of days.controls; track day; let di = $index) {
+      <button
+        type="button"
+        class="week-tab"
+        [class.week-tab--active]="selectedDay() === di"
+        (click)="selectDay(di)"
+      >
+        {{ asGroup(day).get('label')?.value }}
+      </button>
+    }
+    <button type="button" class="week-tab week-tab--add" (click)="addDay()">+</button>
+  </div>
+
+  <div class="field day-name-field">
+    <label class="field__label">Nome giorno {{ selectedDay() + 1 }}</label>
+    <input
+      class="field__input"
+      type="text"
+      [formControl]="dayLabelControl(selectedDay())"
+      placeholder="Es. A, Spinta, Upper…"
+      autocomplete="off"
+    />
+  </div>
+
+  @if (days.length > 1) {
+    <button
+      type="button"
+      class="btn btn--danger btn--block week-remove"
+      (click)="removeDay(selectedDay())"
+    >
+      Rimuovi giorno {{ asGroup(days.at(selectedDay())).get('label')?.value }}
+    </button>
+  }
+
   <h2 class="section-title">Settimane</h2>
   <p class="section-hint">Gli esercizi sono gli stessi in ogni settimana: cambiano solo serie, ripetizioni e carico.</p>
 
@@ -107,11 +145,11 @@
     </button>
   }
 
-  <h2 class="section-title">Esercizi — settimana {{ selectedWeek() + 1 }}</h2>
+  <h2 class="section-title">Esercizi — giorno {{ asGroup(days.at(selectedDay())).get('label')?.value }}, settimana {{ selectedWeek() + 1 }}</h2>
 
-  <div formArrayName="exercises" class="exercise-rows">
+  <div class="exercise-rows">
     @for (row of exercises.controls; track row; let i = $index) {
-      <div class="exercise-row" [formGroupName]="i">
+      <div class="exercise-row" [formGroup]="asGroup(row)">
         <div class="exercise-row__top">
           <input
             class="field__input exercise-row__name"

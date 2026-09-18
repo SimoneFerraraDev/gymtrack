@@ -113,8 +113,10 @@ export class SessionLog implements OnInit {
       const week =
         plan.weeks.find((w) => w.weekNumber === session.weekNumber) ?? plan.weeks[0];
       if (week) {
-        for (const pe of plan.exercises) {
-          this.targetsByExerciseId.set(pe.exerciseId, week.targetsByExerciseId[pe.id] ?? []);
+        for (const day of plan.days) {
+          for (const pe of day.exercises) {
+            this.targetsByExerciseId.set(pe.exerciseId, week.targetsByExerciseId[pe.id] ?? []);
+          }
         }
       }
       for (const we of plan.warmup) {

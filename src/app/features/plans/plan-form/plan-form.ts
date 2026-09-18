@@ -2,6 +2,7 @@ import {
   AbstractControl,
   FormArray,
   FormBuilder,
+  FormControl,
   FormGroup,
   ReactiveFormsModule,
   Validators,
@@ -11,6 +12,7 @@ import { Router } from '@angular/router';
 import { ExerciseService } from '../../../core/services/exercise.service';
 import { PlanService } from '../../../core/services/plan.service';
 import {
+  PlanDay,
   PlanExercise,
   PlanSetTarget,
   PlanWeek,
@@ -46,12 +48,13 @@ export class PlanForm {
    */
   readonly loading = signal(true);
 
-  /** Indice (0-based) della settimana attualmente mostrata nel form. */
+  /** Indice (0-based) del giorno e della settimana attualmente mostrati. */
+  readonly selectedDay = signal(0);
   readonly selectedWeek = signal(0);
 
   protected readonly form = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.maxLength(60)]],
-    exercises: this.fb.array<ReturnType<typeof this.buildExerciseIdentityRow>>([]),
+    days: this.fb.array<ReturnType<typeof this.buildDayGroup>>([]),
     weeks: this.fb.array<ReturnType<typeof this.buildWeekGroup>>([]),
     warmup: this.fb.array<ReturnType<typeof this.buildWarmupRow>>([]),
   });
@@ -61,13 +64,14 @@ export class PlanForm {
     // diretta tra due schede diverse senza ricreare il componente).
     effect(() => {
       const currentId = this.id();
-      this.exercises.clear();
+      this.days.clear();
       this.weeks.clear();
       this.warmup.clear();
       if (currentId) {
         this.loading.set(true);
         this.loadForEdit(currentId);
       } else {
+        this.addDay();
         this.addExerciseRow();
         this.addWeek();
         this.loading.set(false);
@@ -75,8 +79,8 @@ export class PlanForm {
     });
   }
 
-  get exercises(): FormArray {
-    return this.form.controls.exercises;
+  get days(): FormArray {
+    return this.form.controls.days;
   }
 
   get weeks(): FormArray {
@@ -89,16 +93,77 @@ export class PlanForm {
 
   /** Serve per usare [formGroup] su un controllo preso da un FormArray
    *  generico (AbstractControl) senza dover ricorrere a formGroupName,
-   *  utile per i target che vivono dentro `weeks` invece che dentro
-   *  `exercises` (i due array vanno tenuti allineati a mano, vedi sotto). */
+   *  utile quando la struttura annidata (giorni × settimane × esercizi)
+   *  non corrisponde 1:1 a un unico albero di formArrayName/formGroupName. */
   asGroup(control: AbstractControl): FormGroup {
     return control as FormGroup;
   }
 
+  dayLabelControl(dayIndex: number): FormControl<string> {
+    return (this.days.at(dayIndex) as FormGroup).get('label') as FormControl<string>;
+  }
+
   // ---------------------------------------------------------------------
-  // Esercizi principali: solo identità (nome, note) e ordine. Gli stessi
-  // esercizi valgono per tutte le settimane; a cambiare sono solo i target
-  // (in `weeks[].targets`, un array parallelo a questo per indice).
+  // Giorni (es. A, B, C): ciascuno con i propri esercizi. Gli stessi
+  // esercizi di un giorno valgono per tutte le settimane; a cambiare sono
+  // solo i target (in `weeks[].targetsByDay[dayIndex]`, un array parallelo
+  // agli esercizi di quel giorno).
+  // ---------------------------------------------------------------------
+
+  private nextDayLabel(): string {
+    const letters = 'ABCDEFGH';
+    return letters[this.days.length] ?? `Giorno ${this.days.length + 1}`;
+  }
+
+  private buildDayGroup(initial?: {
+    label?: string;
+    exerciseRows?: { exerciseName?: string; notes?: string }[];
+  }) {
+    const label = initial?.label ?? this.nextDayLabel();
+    const rows = initial?.exerciseRows ?? [];
+    return this.fb.group({
+      label: this.fb.nonNullable.control(label, Validators.required),
+      exercises: this.fb.array(rows.map((r) => this.buildExerciseIdentityRow(r))),
+    });
+  }
+
+  exercisesOfDay(dayIndex: number): FormArray {
+    return (this.days.at(dayIndex) as FormGroup).get('exercises') as FormArray;
+  }
+
+  /** Esercizi del giorno attualmente selezionato. */
+  get exercises(): FormArray {
+    return this.exercisesOfDay(this.selectedDay());
+  }
+
+  selectDay(index: number): void {
+    this.selectedDay.set(index);
+  }
+
+  addDay(): void {
+    this.days.push(this.buildDayGroup());
+    // Nuovo slot vuoto per il giorno in ogni settimana già esistente.
+    for (const week of this.weeks.controls as FormGroup[]) {
+      (week.get('targetsByDay') as FormArray).push(this.fb.array([]));
+    }
+    this.selectedDay.set(this.days.length - 1);
+  }
+
+  removeDay(index: number): void {
+    if (this.days.length <= 1) return; // almeno un giorno
+    this.days.removeAt(index);
+    for (const week of this.weeks.controls as FormGroup[]) {
+      (week.get('targetsByDay') as FormArray).removeAt(index);
+    }
+    if (this.selectedDay() >= this.days.length) {
+      this.selectedDay.set(this.days.length - 1);
+    }
+  }
+
+  // ---------------------------------------------------------------------
+  // Esercizi principali del giorno selezionato: solo identità (nome, note)
+  // e ordine. Gli stessi esercizi valgono per tutte le settimane; a
+  // cambiare sono solo i target.
   // ---------------------------------------------------------------------
 
   private buildExerciseIdentityRow(initial?: { exerciseName?: string; notes?: string }) {
@@ -112,17 +177,20 @@ export class PlanForm {
   }
 
   addExerciseRow(): void {
-    this.exercises.push(this.buildExerciseIdentityRow());
-    // Nuovo slot target (vuoto, un default da 10 rip) in ogni settimana già esistente.
+    const dayIndex = this.selectedDay();
+    this.exercisesOfDay(dayIndex).push(this.buildExerciseIdentityRow());
     for (const week of this.weeks.controls as FormGroup[]) {
-      (week.get('targets') as FormArray).push(this.buildTargetsArray());
+      const dayTargets = (week.get('targetsByDay') as FormArray).at(dayIndex) as FormArray;
+      dayTargets.push(this.buildTargetsArray());
     }
   }
 
   removeExerciseRow(index: number): void {
-    this.exercises.removeAt(index);
+    const dayIndex = this.selectedDay();
+    this.exercisesOfDay(dayIndex).removeAt(index);
     for (const week of this.weeks.controls as FormGroup[]) {
-      (week.get('targets') as FormArray).removeAt(index);
+      const dayTargets = (week.get('targetsByDay') as FormArray).at(dayIndex) as FormArray;
+      dayTargets.removeAt(index);
     }
   }
 
@@ -137,21 +205,23 @@ export class PlanForm {
   }
 
   private swapExercise(i: number, j: number): void {
-    const arr = this.exercises;
+    const dayIndex = this.selectedDay();
+    const arr = this.exercisesOfDay(dayIndex);
     const ctrl = arr.at(i);
     arr.removeAt(i);
     arr.insert(j, ctrl);
     for (const week of this.weeks.controls as FormGroup[]) {
-      const targets = week.get('targets') as FormArray;
-      const t = targets.at(i);
-      targets.removeAt(i);
-      targets.insert(j, t);
+      const dayTargets = (week.get('targetsByDay') as FormArray).at(dayIndex) as FormArray;
+      const t = dayTargets.at(i);
+      dayTargets.removeAt(i);
+      dayTargets.insert(j, t);
     }
   }
 
   // ---------------------------------------------------------------------
-  // Settimane: ogni settimana ha un array di target (uno per esercizio,
-  // stesso ordine/indice dell'array `exercises`).
+  // Settimane: ogni settimana ha, per ogni giorno, un array di target (uno
+  // per esercizio di quel giorno, stesso ordine/indice del suo array
+  // `exercises`).
   // ---------------------------------------------------------------------
 
   private buildTargetRow(initial?: Partial<PlanSetTarget>) {
@@ -166,23 +236,33 @@ export class PlanForm {
     return this.fb.array(rows.map((t) => this.buildTargetRow(t)));
   }
 
-  private buildWeekGroup(initialTargetsPerExercise?: (PlanSetTarget[] | undefined)[]) {
-    const count = this.exercises.length;
-    const perExercise =
-      initialTargetsPerExercise ?? Array.from({ length: count }, () => undefined);
+  /** targetsPerDay[i] = un array di target per ogni esercizio del giorno i
+   *  (o undefined per usare i default). */
+  private buildWeekGroup(targetsPerDay?: (PlanSetTarget[][] | undefined)[]) {
+    const perDay =
+      targetsPerDay ??
+      this.days.controls.map((d) =>
+        Array.from({ length: (d.get('exercises') as FormArray).length }, () => undefined),
+      );
     return this.fb.group({
-      targets: this.fb.array(perExercise.map((t) => this.buildTargetsArray(t))),
+      targetsByDay: this.fb.array(
+        perDay.map((dayTargets) =>
+          this.fb.array((dayTargets ?? []).map((t) => this.buildTargetsArray(t))),
+        ),
+      ),
     });
   }
 
-  /** Serie pianificate del dato esercizio, nella settimana selezionata. */
-  targetsOf(exerciseIndex: number): FormArray {
-    return this.targetsOfWeek(this.selectedWeek(), exerciseIndex);
+  targetsOfWeekDayExercise(weekIndex: number, dayIndex: number, exerciseIndex: number): FormArray {
+    const week = this.weeks.at(weekIndex) as FormGroup;
+    const dayTargets = (week.get('targetsByDay') as FormArray).at(dayIndex) as FormArray;
+    return dayTargets.at(exerciseIndex) as FormArray;
   }
 
-  targetsOfWeek(weekIndex: number, exerciseIndex: number): FormArray {
-    const week = this.weeks.at(weekIndex) as FormGroup;
-    return (week.get('targets') as FormArray).at(exerciseIndex) as FormArray;
+  /** Serie pianificate del dato esercizio, nel giorno e nella settimana
+   *  attualmente selezionati. */
+  targetsOf(exerciseIndex: number): FormArray {
+    return this.targetsOfWeekDayExercise(this.selectedWeek(), this.selectedDay(), exerciseIndex);
   }
 
   /** Aggiunge una nuova serie pianificata, ripetendo i valori dell'ultima
@@ -211,8 +291,15 @@ export class PlanForm {
     const lastWeekIndex = this.weeks.length - 1;
     const initial =
       lastWeekIndex >= 0
-        ? this.exercises.controls.map(
-            (_, i) => this.targetsOfWeek(lastWeekIndex, i).getRawValue() as PlanSetTarget[],
+        ? this.days.controls.map((_, dayIndex) =>
+            this.exercisesOfDay(dayIndex).controls.map(
+              (_, exIndex) =>
+                this.targetsOfWeekDayExercise(
+                  lastWeekIndex,
+                  dayIndex,
+                  exIndex,
+                ).getRawValue() as PlanSetTarget[],
+            ),
           )
         : undefined;
     this.weeks.push(this.buildWeekGroup(initial));
@@ -229,7 +316,7 @@ export class PlanForm {
 
   // ---------------------------------------------------------------------
   // Riscaldamento: stessa forma degli esercizi principali (nome + serie/rip)
-  // ma un unico blocco, uguale per tutte le settimane.
+  // ma un unico blocco, uguale per tutte le settimane e tutti i giorni.
   // ---------------------------------------------------------------------
 
   private buildWarmupRow(initial?: {
@@ -285,19 +372,27 @@ export class PlanForm {
     }
     this.form.patchValue({ name: plan.name }, { emitEvent: false });
 
-    const sortedExercises = [...plan.exercises].sort((a, b) => a.order - b.order);
-    for (const pe of sortedExercises) {
-      const exercise = await this.exerciseService.getById(pe.exerciseId);
-      this.exercises.push(
-        this.buildExerciseIdentityRow({ exerciseName: exercise?.name ?? '', notes: pe.notes }),
-      );
+    const sortedDays = [...plan.days].sort((a, b) => a.order - b.order);
+    const sortedExercisesByDay: PlanExercise[][] = [];
+    for (const day of sortedDays) {
+      const sortedExercises = [...day.exercises].sort((a, b) => a.order - b.order);
+      sortedExercisesByDay.push(sortedExercises);
+      const exerciseRows: { exerciseName?: string; notes?: string }[] = [];
+      for (const pe of sortedExercises) {
+        const exercise = await this.exerciseService.getById(pe.exerciseId);
+        exerciseRows.push({ exerciseName: exercise?.name ?? '', notes: pe.notes });
+      }
+      this.days.push(this.buildDayGroup({ label: day.label, exerciseRows }));
     }
-    if (this.exercises.length === 0) this.addExerciseRow();
+    if (this.days.length === 0) this.addDay();
+    this.selectedDay.set(0);
 
     const sortedWeeks = [...plan.weeks].sort((a, b) => a.weekNumber - b.weekNumber);
     for (const week of sortedWeeks) {
-      const perExercise = sortedExercises.map((pe) => week.targetsByExerciseId[pe.id] ?? []);
-      this.weeks.push(this.buildWeekGroup(perExercise));
+      const targetsPerDay = sortedExercisesByDay.map((exs) =>
+        exs.map((pe) => week.targetsByExerciseId[pe.id] ?? []),
+      );
+      this.weeks.push(this.buildWeekGroup(targetsPerDay));
     }
     if (this.weeks.length === 0) this.addWeek();
     this.selectedWeek.set(0);
@@ -326,27 +421,40 @@ export class PlanForm {
     try {
       const raw = this.form.getRawValue();
 
-      const exercises: PlanExercise[] = [];
-      let order = 0;
-      for (const row of raw.exercises) {
-        const exercise = await this.exerciseService.findOrCreateByName(row.exerciseName);
-        exercises.push({
+      const days: PlanDay[] = [];
+      let dayOrder = 0;
+      for (const dayRow of raw.days) {
+        const exercises: PlanExercise[] = [];
+        let order = 0;
+        for (const exRow of dayRow.exercises) {
+          const exercise = await this.exerciseService.findOrCreateByName(exRow.exerciseName);
+          exercises.push({
+            id: crypto.randomUUID(),
+            exerciseId: exercise.id,
+            order: order++,
+            notes: exRow.notes || undefined,
+          });
+        }
+        days.push({
           id: crypto.randomUUID(),
-          exerciseId: exercise.id,
-          order: order++,
-          notes: row.notes || undefined,
+          label: dayRow.label,
+          order: dayOrder++,
+          exercises,
         });
       }
 
-      const weeks: PlanWeek[] = raw.weeks.map((week, weekIndex) => ({
-        weekNumber: weekIndex + 1,
-        targetsByExerciseId: Object.fromEntries(
-          exercises.map((ex, i) => [
-            ex.id,
-            week.targets[i].map((t) => ({ reps: t.reps, weight: t.weight ?? undefined })),
-          ]),
-        ),
-      }));
+      const weeks: PlanWeek[] = raw.weeks.map((week, weekIndex) => {
+        const targetsByExerciseId: Record<string, PlanSetTarget[]> = {};
+        days.forEach((day, dayIndex) => {
+          day.exercises.forEach((ex, exIndex) => {
+            targetsByExerciseId[ex.id] = week.targetsByDay[dayIndex][exIndex].map((t) => ({
+              reps: t.reps,
+              weight: t.weight ?? undefined,
+            }));
+          });
+        });
+        return { weekNumber: weekIndex + 1, targetsByExerciseId };
+      });
 
       const warmup: WarmupExercise[] = [];
       let warmupOrder = 0;
@@ -363,9 +471,9 @@ export class PlanForm {
 
       const currentId = this.id();
       if (currentId) {
-        await this.planService.update(currentId, { name: raw.name, exercises, weeks, warmup });
+        await this.planService.update(currentId, { name: raw.name, days, weeks, warmup });
       } else {
-        await this.planService.create({ name: raw.name, exercises, weeks, warmup });
+        await this.planService.create({ name: raw.name, days, weeks, warmup });
       }
       this.router.navigateByUrl('/schede');
     } finally {

@@ -1,15 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import { db } from '../db/gymtrack-db';
 import { generateId } from '../db/id.util';
-import {
-  NewPlanExercise,
-  NewWarmupExercise,
-  NewWorkoutPlan,
-  PlanExercise,
-  PlanSetTarget,
-  WarmupExercise,
-  WorkoutPlan,
-} from '../models/workout-plan.model';
+import { NewWorkoutPlan, PlanDay, PlanExercise, PlanSetTarget, WorkoutPlan } from '../models/workout-plan.model';
 
 @Injectable({ providedIn: 'root' })
 export class PlanService {
@@ -28,18 +20,20 @@ export class PlanService {
     this.activePlans.set(normalized.filter((p) => !p.archived));
   }
 
+  /**
+   * Gli id di esercizi/giorni/riscaldamento sono già assegnati da chi
+   * chiama (il form): le settimane li referenziano da subito
+   * (`targetsByExerciseId`), quindi qui non vanno mai rigenerati o la
+   * mappa dei target si disallinea.
+   */
   async create(input: NewWorkoutPlan): Promise<WorkoutPlan> {
     const now = Date.now();
-    const exercises = input.exercises.map((e) => this.withId(e));
     const plan: WorkoutPlan = {
       ...input,
       id: generateId(),
       createdAt: now,
       updatedAt: now,
       archived: false,
-      exercises,
-      weeks: input.weeks,
-      warmup: input.warmup.map((w) => this.withWarmupId(w)),
     };
     await db.plans.add(plan);
     await this.refresh();
@@ -68,30 +62,42 @@ export class PlanService {
     return plan ? this.normalize(plan) : undefined;
   }
 
-  private withId(input: NewPlanExercise): PlanExercise {
-    return { ...input, id: generateId() };
-  }
-
-  private withWarmupId(input: NewWarmupExercise): WarmupExercise {
-    return { ...input, id: generateId() };
-  }
-
   /**
-   * Retrocompatibilità: le schede create prima dell'introduzione delle
-   * settimane avevano i target direttamente su ogni PlanExercise (niente
-   * `weeks`, niente `warmup`). Qui le si porta alla forma attuale al volo,
-   * senza bisogno di una migrazione IndexedDB vera e propria: una singola
-   * settimana con quei target, riscaldamento vuoto.
+   * Retrocompatibilità: porta al volo alla forma attuale (giorni + settimane
+   * + riscaldamento) le schede salvate con una forma precedente, senza
+   * bisogno di una migrazione IndexedDB vera e propria. Due forme precedenti
+   * possibili:
+   *  - schede con `weeks`/`warmup` ma esercizi ancora su un unico elenco
+   *    piatto (`exercises`), senza giorni: diventano un unico giorno "A"
+   *    con tutti quegli esercizi, weeks/warmup invariati (le chiavi di
+   *    `targetsByExerciseId` restano valide, sono già gli id di quegli
+   *    esercizi);
+   *  - schede ancora più vecchie, con i target direttamente su ogni
+   *    esercizio (niente `weeks` né `warmup`): diventano un giorno "A" con
+   *    una sola settimana con quei target, riscaldamento vuoto.
    */
   private normalize(plan: WorkoutPlan): WorkoutPlan {
-    if (Array.isArray(plan.weeks) && plan.weeks.length > 0) {
+    if (Array.isArray(plan.days) && plan.days.length > 0) {
       return { ...plan, warmup: plan.warmup ?? [] };
     }
-    const legacyExercises = plan.exercises as (PlanExercise & {
-      targets?: PlanSetTarget[];
-    })[];
+
+    const flatExercises = (plan as WorkoutPlan & { exercises?: PlanExercise[] }).exercises ?? [];
+
+    if (Array.isArray(plan.weeks) && plan.weeks.length > 0) {
+      const day: PlanDay = { id: generateId(), label: 'A', order: 0, exercises: flatExercises };
+      return { ...plan, days: [day], warmup: plan.warmup ?? [] };
+    }
+
+    const legacyExercises = flatExercises as (PlanExercise & { targets?: PlanSetTarget[] })[];
+    const day: PlanDay = {
+      id: generateId(),
+      label: 'A',
+      order: 0,
+      exercises: legacyExercises,
+    };
     return {
       ...plan,
+      days: [day],
       warmup: plan.warmup ?? [],
       weeks: [
         {

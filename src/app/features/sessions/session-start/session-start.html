@@ -13,6 +13,26 @@
         </p>
         <a class="btn btn--primary" routerLink="/schede/nuova">Crea una scheda</a>
       </div>
+    } @else if (pickingDayFor(); as picking) {
+      <p class="page__hint">
+        <button type="button" class="link-back" (click)="cancelDayPick()">← {{ picking.plan.name }}</button>
+      </p>
+      <p class="page__hint">Che giorno segui oggi?</p>
+      <ul class="plan-pick-list">
+        @for (day of picking.plan.days; track day.id) {
+          <li>
+            <button
+              type="button"
+              class="plan-pick"
+              [disabled]="!!startingPlanId()"
+              (click)="start(picking.plan, picking.weekNumber, day.id)"
+            >
+              <span class="plan-pick__name">Giorno {{ day.label }}</span>
+              <span class="plan-pick__meta">{{ day.exercises.length }} esercizi</span>
+            </button>
+          </li>
+        }
+      </ul>
     } @else if (pickingWeekFor(); as plan) {
       <p class="page__hint">
         <button type="button" class="link-back" (click)="cancelWeekPick()">← {{ plan.name }}</button>
@@ -25,7 +45,7 @@
               type="button"
               class="plan-pick"
               [disabled]="!!startingPlanId()"
-              (click)="start(plan, week.weekNumber)"
+              (click)="chooseWeek(plan, week.weekNumber)"
             >
               <span class="plan-pick__name">Settimana {{ week.weekNumber }}</span>
             </button>
@@ -45,7 +65,7 @@
             >
               <span class="plan-pick__name">{{ plan.name }}</span>
               <span class="plan-pick__meta">
-                {{ plan.exercises.length }} esercizi · {{ plan.weeks.length }} settiman{{ plan.weeks.length === 1 ? 'a' : 'e' }}
+                {{ plan.days.length }} giorn{{ plan.days.length === 1 ? 'o' : 'i' }} · {{ plan.weeks.length }} settiman{{ plan.weeks.length === 1 ? 'a' : 'e' }}
               </span>
             </button>
           </li>

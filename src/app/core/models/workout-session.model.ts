@@ -9,6 +9,7 @@ export interface WorkoutSession {
   planId: string;
   planName: string;
   weekNumber?: number; // settimana della scheda seguita in questa sessione (assente per schede senza settimane, retrocompatibilità)
+  dayLabel?: string; // giorno della scheda seguito (es. "A"), snapshot preso al momento del log (assente per schede senza giorni, retrocompatibilità)
   date: number; // giorno della sessione (epoch ms, normalizzato a mezzanotte)
   startedAt: number;
   finishedAt?: number;
